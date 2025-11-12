@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Add New Ingredient Modal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<style>
+      select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23A0A0A0' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.5rem center;
+        background-repeat: no-repeat;
+        background-size: 1.5em 1.5em;
+        padding-right: 2.5rem;
+      }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#FFFFFF", 
+              "background-light": "#f6f6f8",
+              "background-dark": "#181818", 
+            },
+            fontFamily: {
+              "display": ["Work Sans", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+</head>
+<body class="font-display">
+<div class="relative flex min-h-screen w-full flex-col items-center justify-center bg-background-light dark:bg-background-dark p-4 sm:p-6" style="background-color: #111111;">
+<div class="absolute inset-0 bg-black/50"></div>
+<div class="relative w-full max-w-lg rounded-xl bg-[#222222] border border-[#333333] shadow-2xl flex flex-col">
+<div class="flex items-center justify-between p-6 border-b border-[#333333]">
+<h3 class="text-xl font-semibold text-[#F5F5F5]">Add New Ingredient</h3>
+<button class="text-[#A0A0A0] hover:text-[#FFFFFF] transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="p-6 space-y-6">
+<div class="grid grid-cols-1 gap-6">
+<label class="flex flex-col">
+<p class="text-sm font-medium text-[#F5F5F5] pb-2">Ingredient Name</p>
+<input class="form-input w-full rounded-lg text-white bg-[#181818] border border-[#333333] focus:border-white focus:ring-1 focus:ring-white h-12 px-4 placeholder:text-[#A0A0A0] text-base font-normal" placeholder="e.g., Whole Milk" type="text" value=""/>
+</label>
+<label class="flex flex-col">
+<p class="text-sm font-medium text-[#F5F5F5] pb-2">Unit of Measure</p>
+<select class="form-select w-full rounded-lg text-white bg-[#181818] border border-[#333333] focus:border-white focus:ring-1 focus:ring-white h-12 px-4 placeholder:text-[#A0A0A0] text-base font-normal">
+<option class="text-[#A0A0A0]" disabled="" selected="" value="">Select a unit</option>
+<option value="grams">grams</option>
+<option value="ml">ml</option>
+<option value="pcs">pcs</option>
+</select>
+</label>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+<label class="flex flex-col">
+<p class="text-sm font-medium text-[#F5F5F5] pb-2">Current Stock</p>
+<input class="form-input w-full rounded-lg text-white bg-[#181818] border border-[#333333] focus:border-white focus:ring-1 focus:ring-white h-12 px-4 placeholder:text-[#A0A0A0] text-base font-normal" placeholder="0" type="number" value=""/>
+</label>
+<label class="flex flex-col">
+<p class="text-sm font-medium text-[#F5F5F5] pb-2">Cost per Unit</p>
+<input class="form-input w-full rounded-lg text-white bg-[#181818] border border-[#333333] focus:border-white focus:ring-1 focus:ring-white h-12 px-4 placeholder:text-[#A0A0A0] text-base font-normal" placeholder="0.00" step="0.01" type="number" value=""/>
+</label>
+</div>
+<label class="flex flex-col">
+<div class="flex items-center gap-2 pb-2">
+<p class="text-sm font-medium text-[#F5F5F5]">Low Stock Threshold</p>
+<div class="group relative flex items-center">
+<span class="material-symbols-outlined text-sm text-[#A0A0A0] cursor-help">help</span>
+<div class="absolute bottom-full mb-2 w-48 rounded-md bg-[#333333] px-3 py-2 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        Receive an alert when stock falls to this level.
+                    </div>
+</div>
+</div>
+<input class="form-input w-full rounded-lg text-white bg-[#181818] border border-[#333333] focus:border-white focus:ring-1 focus:ring-white h-12 px-4 placeholder:text-[#A0A0A0] text-base font-normal" placeholder="0" type="number" value=""/>
+</label>
+</div>
+</div>
+<div class="flex items-center justify-end gap-4 p-6 border-t border-[#333333]">
+<button class="px-5 py-2.5 rounded-lg text-sm font-semibold text-[#F5F5F5] hover:bg-[#333333] transition-colors">Cancel</button>
+<button class="px-5 py-2.5 rounded-lg text-sm font-semibold bg-primary text-black hover:bg-opacity-90 transition-colors">Add Ingredient</button>
+</div>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Inventory Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#000000",
+                        "background-light": "#f5f5f5",
+                        "background-dark": "#171717",
+                    },
+                    fontFamily: {
+                        "display": ["Work Sans"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-900 dark:text-gray-100">
+<div class="relative flex min-h-screen w-full">
+<aside class="flex-shrink-0 w-64 bg-[#0a0a0a] p-4 flex flex-col justify-between">
+<div class="flex flex-col gap-4">
+<div class="flex items-center gap-3 p-2">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Admin user avatar placeholder" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuACrv_hBIxIbKUTYE1GK2T_MnpNw0D5m34alzSbW8L2bnNctaI_BS-eudjy6n4Q8NyZdiBvmI2k9RnC1fQxr1B1M3gQpRrQ4IFe1VnHFrVuLCDiLBJnVXNOrq7wXnTgWM22XU0VS15tyv9sLkNnw9Lqw9KhXmTxXl5VLvo8_UUit1TuOD2uJ787d01oFp2IzDIrYdfqc3Z0BhgWII0K2GoHM94MrKFGPHykrLX8YTtZ34uFo5l3Dte8F7MHlsyWJeDkjuTBR8vJE4bZ");'></div>
+<div class="flex flex-col">
+<h1 class="text-white text-base font-medium leading-normal">Admin User</h1>
+<p class="text-gray-400 text-sm font-normal leading-normal">admin@coffeeshop.com</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<p class="text-sm font-medium leading-normal">Dashboard</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800" href="#">
+<span class="material-symbols-outlined">trending_up</span>
+<p class="text-sm font-medium leading-normal">Sales</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-800 text-white" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<p class="text-sm font-medium leading-normal">Inventory</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800" href="#">
+<span class="material-symbols-outlined">group</span>
+<p class="text-sm font-medium leading-normal">Employees</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800" href="#">
+<span class="material-symbols-outlined">settings</span>
+<p class="text-sm font-medium leading-normal">Settings</p>
+</a>
+</nav>
+</div>
+<div class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800" href="#">
+<span class="material-symbols-outlined">logout</span>
+<p class="text-sm font-medium leading-normal">Log Out</p>
+</a>
+</div>
+</aside>
+<main class="flex-1 p-8">
+<div class="w-full max-w-7xl mx-auto">
+<header class="flex flex-wrap justify-between items-center gap-4 mb-8">
+<h1 class="text-gray-900 dark:text-white text-3xl font-bold leading-tight">Inventory Management</h1>
+<div class="flex items-center gap-4">
+<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-white text-black dark:bg-black dark:text-white text-sm font-medium leading-normal tracking-wide border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+<span class="truncate">+ Add New Supplier</span>
+</button>
+<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white dark:bg-white dark:text-black text-sm font-medium leading-normal tracking-wide hover:opacity-90 transition-opacity">
+<span class="truncate">+ Add New Ingredient</span>
+</button>
+</div>
+</header>
+<div class="border-b border-gray-200 dark:border-gray-700">
+<nav aria-label="Tabs" class="-mb-px flex gap-6">
+<a class="shrink-0 border-b-2 border-primary dark:border-white px-1 pb-4 text-sm font-medium text-gray-900 dark:text-white" href="#">Ingredients</a>
+<a class="shrink-0 border-b-2 border-transparent px-1 pb-4 text-sm font-medium text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 transition-colors" href="#">Suppliers</a>
+<a class="shrink-0 border-b-2 border-transparent px-1 pb-4 text-sm font-medium text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 transition-colors" href="#">Recipes</a>
+</nav>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 py-6">
+<div class="lg:col-span-2">
+<label class="flex flex-col min-w-40 h-10 w-full">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full bg-white dark:bg-black border border-gray-300 dark:border-gray-700 focus-within:border-black dark:focus-within:border-white">
+<div class="text-gray-500 dark:text-gray-400 flex items-center justify-center pl-3">
+<span class="material-symbols-outlined !text-xl">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden text-gray-900 dark:text-white focus:outline-0 focus:ring-0 border-none bg-transparent h-full placeholder:text-gray-500 dark:placeholder:text-gray-400 px-2 text-sm font-normal leading-normal" placeholder="Search by ingredient name..." value=""/>
+</div>
+</label>
+</div>
+<div class="flex items-center">
+<button class="flex h-10 w-full items-center justify-between gap-x-2 rounded-lg bg-white dark:bg-black border border-gray-300 dark:border-gray-700 px-4 text-sm font-medium leading-normal text-gray-900 dark:text-white">
+<p class="truncate">All Categories</p>
+<span class="material-symbols-outlined text-gray-500 dark:text-gray-400">expand_more</span>
+</button>
+</div>
+<div class="flex items-center justify-start lg:justify-end gap-3 h-10 px-2">
+<label class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer" for="low-stock-toggle">Show Low Stock</label>
+<button aria-checked="false" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 dark:bg-gray-700 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:ring-offset-2 dark:focus:ring-offset-background-dark" id="low-stock-toggle" role="switch">
+<span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white dark:bg-black shadow ring-0 transition duration-200 ease-in-out translate-x-0"></span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+<table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+<thead class="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-900/50">
+<tr>
+<th class="px-6 py-4 font-medium" scope="col">Name</th>
+<th class="px-6 py-4 font-medium" scope="col">Category</th>
+<th class="px-6 py-4 font-medium" scope="col">Stock Level</th>
+<th class="px-6 py-4 font-medium" scope="col">Unit</th>
+<th class="px-6 py-4 font-medium" scope="col">Supplier</th>
+<th class="px-6 py-4 font-medium" scope="col">Last Updated</th>
+<th class="px-6 py-4 font-medium" scope="col"><span class="sr-only">Actions</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b border-gray-200 dark:border-gray-800">
+<th class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap" scope="row">Arabica Beans</th>
+<td class="px-6 py-4">Coffee Beans</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">In Stock</span>
+</td>
+<td class="px-6 py-4">kg</td>
+<td class="px-6 py-4">Bean Supreme</td>
+<td class="px-6 py-4">2023-10-26</td>
+<td class="px-6 py-4 text-right">
+<button class="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="border-b border-gray-200 dark:border-gray-800">
+<th class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap" scope="row">Whole Milk</th>
+<td class="px-6 py-4">Dairy</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">Low Stock</span>
+</td>
+<td class="px-6 py-4">L</td>
+<td class="px-6 py-4">Dairy Farms</td>
+<td class="px-6 py-4">2023-10-25</td>
+<td class="px-6 py-4 text-right">
+<button class="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="border-b border-gray-200 dark:border-gray-800">
+<th class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap" scope="row">Caramel Syrup</th>
+<td class="px-6 py-4">Syrups</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">In Stock</span>
+</td>
+<td class="px-6 py-4">L</td>
+<td class="px-6 py-4">Sweet Sensations</td>
+<td class="px-6 py-4">2023-10-26</td>
+<td class="px-6 py-4 text-right">
+<button class="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="border-b-0 dark:border-gray-800">
+<th class="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap" scope="row">12oz Paper Cups</th>
+<td class="px-6 py-4">Disposables</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">Out of Stock</span>
+</td>
+<td class="px-6 py-4">pcs</td>
+<td class="px-6 py-4">CupCorp</td>
+<td class="px-6 py-4">2023-10-22</td>
+<td class="px-6 py-4 text-right">
+<button class="text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+</div>
+</body></html>
