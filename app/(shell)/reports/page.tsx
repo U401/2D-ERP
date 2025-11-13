@@ -9,7 +9,7 @@ import ReportsSummary from '@/components/ReportsSummary'
 type DateRange = 'today' | 'last7days' | 'last30days'
 
 export default function ReportsPage() {
-  const [dateRange, setDateRange] = useState<DateRange>('last30days')
+  const [dateRange, setDateRange] = useState<DateRange>('today')
   const [salesData, setSalesData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
@@ -194,9 +194,9 @@ export default function ReportsPage() {
                 onChange={(e) => setDateRange(e.target.value as DateRange)}
                 className="appearance-none flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-md h-9 pl-3 pr-8 bg-input-gray text-slate-700 text-sm font-medium border border-gray-300 gap-2 hover:bg-[#E5E5E5] transition-colors"
               >
-                <option value="last30days">Last 30 Days</option>
                 <option value="today">Today</option>
                 <option value="last7days">Last 7 Days</option>
+                <option value="last30days">Last 30 Days</option>
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-700">
                 <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>

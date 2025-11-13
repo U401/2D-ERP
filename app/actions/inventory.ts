@@ -7,9 +7,17 @@ import { z } from 'zod'
 const IngredientSchema = z.object({
   name: z.string().min(1),
   unit: z.string().min(1),
+  category: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? null : val),
+    z.string().nullable().optional()
+  ),
   current_stock: z.number().nonnegative().default(0),
   cost: z.number().nonnegative().default(0),
   low_stock_threshold: z.number().nonnegative().default(0),
+  supplier_id: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? null : val),
+    z.string().uuid().nullable().optional()
+  ),
 })
 
 const RestockSchema = z.object({
@@ -110,5 +118,19 @@ export async function updateIngredient(
 
   revalidatePath('/inventory')
   return { success: true, error: null, ingredient }
+}
+
+export async function deleteIngredient(id: string) {
+  const supabase = createServerClient()
+
+  const { error } = await supabase.from('ingredients').delete().eq('id', id)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/inventory')
+  revalidatePath('/menu')
+  return { success: true, error: null }
 }
 

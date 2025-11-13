@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { restockIngredient } from '@/app/actions/inventory'
+import { restockIngredient, deleteIngredient } from '@/app/actions/inventory'
 import { addSupplier, getSuppliers } from '@/app/actions/suppliers'
 import AddIngredientModal from '@/components/modals/AddIngredientModal'
 import RestockModal from '@/components/modals/RestockModal'
@@ -133,6 +133,19 @@ export default function InventoryPage() {
       })
       
       setRecipeGroups(Array.from(grouped.values()))
+    }
+  }
+
+  async function handleDeleteIngredient(ingredientId: string, ingredientName: string) {
+    if (!confirm(`Are you sure you want to delete "${ingredientName}"? This action cannot be undone.`)) {
+      return
+    }
+
+    const result = await deleteIngredient(ingredientId)
+    if (result.success) {
+      await loadIngredients()
+    } else {
+      alert(`Error: ${result.error}`)
     }
   }
 
@@ -334,32 +347,45 @@ export default function InventoryPage() {
                           : '-'}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => {
-                            setSelectedIngredient(ingredient)
-                            setShowEditModal(true)
-                          }}
-                          className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors mr-2"
-                        >
-                          <span
-                            className="material-symbols-outlined !text-xl"
-                            style={{
-                              fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20",
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => {
+                              setSelectedIngredient(ingredient)
+                              setShowEditModal(true)
                             }}
+                            className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                            title="Edit ingredient"
                           >
-                            edit
-                          </span>
-                          <span className="sr-only">Edit</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedIngredient(ingredient)
-                            setShowRestockModal(true)
-                          }}
-                          className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
-                        >
-                          <span className="material-symbols-outlined !text-xl">add</span>
-                        </button>
+                            <span
+                              className="material-symbols-outlined !text-xl"
+                              style={{
+                                fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20",
+                              }}
+                            >
+                              edit
+                            </span>
+                            <span className="sr-only">Edit</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedIngredient(ingredient)
+                              setShowRestockModal(true)
+                            }}
+                            className="p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                            title="Restock ingredient"
+                          >
+                            <span className="material-symbols-outlined !text-xl">add</span>
+                            <span className="sr-only">Restock</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteIngredient(ingredient.id, ingredient.name)}
+                            className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
+                            title="Delete ingredient"
+                          >
+                            <span className="material-symbols-outlined !text-xl">delete</span>
+                            <span className="sr-only">Delete</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )

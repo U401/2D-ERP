@@ -1,7 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { addIngredient } from '@/app/actions/inventory'
+import { getSuppliers } from '@/app/actions/suppliers'
+
+type Supplier = {
+  id: string
+  name: string
+}
 
 type Props = {
   onClose: () => void
@@ -11,18 +17,40 @@ export default function AddIngredientModal({ onClose }: Props) {
   const [formData, setFormData] = useState({
     name: '',
     unit: '',
-    current_stock: 0,
-    cost: 0,
-    low_stock_threshold: 0,
+    category: '',
+    current_stock: '' as number | '',
+    cost: '' as number | '',
+    low_stock_threshold: '' as number | '',
+    supplier_id: '',
   })
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
+
+  useEffect(() => {
+    loadSuppliers()
+  }, [])
+
+  async function loadSuppliers() {
+    const result = await getSuppliers()
+    if (result.success) {
+      setSuppliers(result.suppliers as Supplier[])
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setIsProcessing(true)
 
     try {
-      const result = await addIngredient(formData)
+      const result = await addIngredient({
+        name: formData.name,
+        unit: formData.unit,
+        category: formData.category || null,
+        current_stock: typeof formData.current_stock === 'string' ? 0 : formData.current_stock,
+        cost: typeof formData.cost === 'string' ? 0 : formData.cost,
+        low_stock_threshold: typeof formData.low_stock_threshold === 'string' ? 0 : formData.low_stock_threshold,
+        supplier_id: formData.supplier_id || null,
+      })
       if (result.success) {
         onClose()
       } else {
@@ -72,6 +100,38 @@ export default function AddIngredientModal({ onClose }: Props) {
               />
             </label>
 
+            <label className="flex flex-col">
+              <p className="text-sm font-medium text-gray-700 pb-2">Category (Optional)</p>
+              <select
+                className="form-select w-full rounded-lg text-gray-900 bg-input-gray border border-gray-300 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 h-12 px-4 text-base font-normal"
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              >
+                <option value="">Select category</option>
+                <option value="Coffee Beans">Coffee Beans</option>
+                <option value="Dairy">Dairy</option>
+                <option value="Syrups">Syrups</option>
+                <option value="Disposables">Disposables</option>
+                <option value="Pastries">Pastries</option>
+              </select>
+            </label>
+
+            <label className="flex flex-col">
+              <p className="text-sm font-medium text-gray-700 pb-2">Supplier (Optional)</p>
+              <select
+                className="form-select w-full rounded-lg text-gray-900 bg-input-gray border border-gray-300 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 h-12 px-4 text-base font-normal"
+                value={formData.supplier_id}
+                onChange={(e) => setFormData({ ...formData, supplier_id: e.target.value })}
+              >
+                <option value="">No supplier</option>
+                {suppliers.map((supplier) => (
+                  <option key={supplier.id} value={supplier.id}>
+                    {supplier.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <label className="flex flex-col">
                 <p className="text-sm font-medium text-gray-700 pb-2">Current Stock</p>
@@ -81,9 +141,12 @@ export default function AddIngredientModal({ onClose }: Props) {
                   step="0.01"
                   className="form-input w-full rounded-lg text-gray-900 bg-input-gray border border-gray-300 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 h-12 px-4 placeholder:text-gray-500 text-base font-normal"
                   placeholder="0"
-                  value={formData.current_stock}
+                  value={formData.current_stock === '' ? '' : formData.current_stock}
                   onChange={(e) =>
-                    setFormData({ ...formData, current_stock: parseFloat(e.target.value) || 0 })
+                    setFormData({ 
+                      ...formData, 
+                      current_stock: e.target.value === '' ? '' : parseFloat(e.target.value) || 0 
+                    })
                   }
                 />
               </label>
@@ -96,9 +159,12 @@ export default function AddIngredientModal({ onClose }: Props) {
                   step="0.01"
                   className="form-input w-full rounded-lg text-gray-900 bg-input-gray border border-gray-300 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 h-12 px-4 placeholder:text-gray-500 text-base font-normal"
                   placeholder="0.00"
-                  value={formData.cost}
+                  value={formData.cost === '' ? '' : formData.cost}
                   onChange={(e) =>
-                    setFormData({ ...formData, cost: parseFloat(e.target.value) || 0 })
+                    setFormData({ 
+                      ...formData, 
+                      cost: e.target.value === '' ? '' : parseFloat(e.target.value) || 0 
+                    })
                   }
                 />
               </label>
@@ -122,11 +188,11 @@ export default function AddIngredientModal({ onClose }: Props) {
                 step="0.01"
                 className="form-input w-full rounded-lg text-gray-900 bg-input-gray border border-gray-300 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 h-12 px-4 placeholder:text-gray-500 text-base font-normal"
                 placeholder="0"
-                value={formData.low_stock_threshold}
+                value={formData.low_stock_threshold === '' ? '' : formData.low_stock_threshold}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    low_stock_threshold: parseFloat(e.target.value) || 0,
+                    low_stock_threshold: e.target.value === '' ? '' : parseFloat(e.target.value) || 0,
                   })
                 }
               />

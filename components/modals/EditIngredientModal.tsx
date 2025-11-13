@@ -30,8 +30,8 @@ export default function EditIngredientModal({ ingredient, onClose }: Props) {
     unit: ingredient.unit,
     category: ingredient.category || '',
     supplier_id: ingredient.supplier_id || '',
-    cost: ingredient.cost,
-    low_stock_threshold: ingredient.low_stock_threshold,
+    cost: ingredient.cost === 0 ? '' : ingredient.cost,
+    low_stock_threshold: ingredient.low_stock_threshold === 0 ? '' : ingredient.low_stock_threshold,
   })
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
@@ -57,8 +57,8 @@ export default function EditIngredientModal({ ingredient, onClose }: Props) {
         unit: formData.unit,
         category: formData.category || null,
         supplier_id: formData.supplier_id || null,
-        cost: formData.cost,
-        low_stock_threshold: formData.low_stock_threshold,
+        cost: typeof formData.cost === 'string' ? 0 : formData.cost,
+        low_stock_threshold: typeof formData.low_stock_threshold === 'string' ? 0 : formData.low_stock_threshold,
       })
 
       if (result.success) {
@@ -184,9 +184,12 @@ export default function EditIngredientModal({ ingredient, onClose }: Props) {
                   step="0.01"
                   className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden text-gray-900 focus:outline-0 focus:ring-0 border-gray-300 bg-input-gray h-10 placeholder:text-gray-500 px-3 text-sm font-normal leading-normal rounded-lg focus:ring-2 focus:ring-black"
                   id="cost"
-                  value={formData.cost}
+                  value={formData.cost === '' ? '' : formData.cost}
                   onChange={(e) =>
-                    setFormData({ ...formData, cost: parseFloat(e.target.value) || 0 })
+                    setFormData({ 
+                      ...formData, 
+                      cost: e.target.value === '' ? '' : parseFloat(e.target.value) || 0 
+                    })
                   }
                 />
               </div>

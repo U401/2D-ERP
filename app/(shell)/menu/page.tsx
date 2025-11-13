@@ -610,9 +610,9 @@ export default function MenuPage() {
                             type="number"
                             min="0"
                             step="0.01"
-                            value={item.quantity}
+                            value={item.quantity === 0 ? '' : item.quantity}
                             onChange={(e) =>
-                              handleUpdateQuantity(index, parseFloat(e.target.value) || 0)
+                              handleUpdateQuantity(index, e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)
                             }
                           />
                           <span className="text-sm text-gray-400">{item.unit}</span>
@@ -808,9 +808,9 @@ export default function MenuPage() {
                             type="number"
                             min="0"
                             step="0.01"
-                            value={item.quantity}
+                            value={item.quantity === 0 ? '' : item.quantity}
                             onChange={(e) =>
-                              handleUpdateQuantity(index, parseFloat(e.target.value) || 0)
+                              handleUpdateQuantity(index, e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)
                             }
                           />
                           <span className="text-sm text-gray-400">{item.unit}</span>
@@ -876,12 +876,12 @@ export default function MenuPage() {
             </>
           ) : (
             <>
-              <h3 className="text-lg font-bold text-white mb-4">Manage Categories</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Manage Categories</h3>
           <div className="flex flex-col gap-3">
             {categories.map((category) => (
               <div
                 key={category}
-                className="flex items-center justify-between p-3 bg-gray-900 rounded-lg"
+                className="flex items-center justify-between p-3 bg-button-gray rounded-lg border border-gray-200"
               >
                 {editingCategory === category ? (
                   <input
@@ -897,22 +897,22 @@ export default function MenuPage() {
                         setEditingCategoryName('')
                       }
                     }}
-                    className="flex-1 bg-gray-800 text-white rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-white"
+                    className="flex-1 bg-input-gray text-gray-900 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 border border-gray-300"
                     autoFocus
                   />
                 ) : (
-                  <p className="text-white text-sm">{category}</p>
+                  <p className="text-gray-900 text-sm">{category}</p>
                 )}
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => handleEditCategory(category)}
-                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"
+                    className="p-2 text-gray-600 hover:text-gray-900 hover:bg-[#D0D0D0] rounded-md transition-colors"
                   >
                     <span className="material-symbols-outlined !text-xl">edit</span>
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(category)}
-                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"
+                    className="p-2 text-gray-600 hover:text-red-600 hover:bg-[#D0D0D0] rounded-md transition-colors"
                   >
                     <span className="material-symbols-outlined !text-xl">delete</span>
                   </button>
@@ -920,18 +920,18 @@ export default function MenuPage() {
               </div>
             ))}
           </div>
-          <div className="border-t border-gray-800 my-4"></div>
-          <h4 className="text-base font-semibold text-white mb-3">Add New Category</h4>
+          <div className="border-t border-gray-200 my-4"></div>
+          <h4 className="text-base font-semibold text-gray-900 mb-3">Add New Category</h4>
           <form onSubmit={handleAddCategory} className="flex flex-col gap-4">
             <div>
               <label
-                className="text-gray-400 text-sm font-medium mb-2 block"
+                className="text-gray-600 text-sm font-medium mb-2 block"
                 htmlFor="category-name"
               >
                 Category Name
               </label>
               <input
-                className="form-input w-full rounded-lg text-white bg-gray-900 border-gray-700 focus:border-white focus:ring-white"
+                className="form-input w-full rounded-lg text-gray-900 bg-input-gray border-gray-300 focus:border-gray-900 focus:ring-gray-900"
                 id="category-name"
                 placeholder="e.g., Cold Brew"
                 type="text"
@@ -941,7 +941,7 @@ export default function MenuPage() {
             </div>
             <button
               type="submit"
-              className="h-10 px-4 rounded-lg bg-white text-black text-sm font-medium hover:bg-gray-200 transition-colors"
+              className="h-10 px-4 rounded-lg bg-button-gray text-gray-900 text-sm font-medium hover:bg-[#D0D0D0] transition-colors border border-gray-200"
             >
               Add Category
             </button>
