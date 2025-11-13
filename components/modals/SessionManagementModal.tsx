@@ -12,7 +12,7 @@ type Session = {
 
 type Props = {
   session: Session | null
-  onClose: () => void
+  onClose: () => void | Promise<void>
   onOpenSession: () => Promise<{ success: boolean; error: string | null }>
   onCloseSession: (
     sessionId: string
@@ -32,7 +32,9 @@ export default function SessionManagementModal({
     try {
       const result = await onOpenSession()
       if (result.success) {
-        onClose()
+        // Wait a bit for state to update before closing modal
+        await new Promise((resolve) => setTimeout(resolve, 200))
+        await onClose()
       } else {
         alert(`Error: ${result.error}`)
       }
@@ -47,7 +49,9 @@ export default function SessionManagementModal({
     try {
       const result = await onCloseSession(session.id)
       if (result.success) {
-        onClose()
+        // Wait a bit for state to update before closing modal
+        await new Promise((resolve) => setTimeout(resolve, 200))
+        await onClose()
       } else {
         alert(`Error: ${result.error}`)
       }
@@ -60,14 +64,14 @@ export default function SessionManagementModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="relative flex w-full max-w-sm flex-col rounded-xl bg-white dark:bg-[#1C1C1C] p-6 shadow-2xl">
+      <div className="relative flex w-full max-w-sm flex-col rounded-xl bg-white p-6 shadow-2xl">
         <div className="flex items-start justify-between">
-          <h2 className="text-2xl font-bold text-[#111111] dark:text-white">
+          <h2 className="text-2xl font-bold text-[#111111]">
             Session Management
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-gray-500 hover:text-gray-800"
           >
             <span className="material-symbols-outlined">close</span>
           </button>
@@ -81,20 +85,20 @@ export default function SessionManagementModal({
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                 </div>
-                <p className="text-lg font-medium text-[#111111] dark:text-white">
+                <p className="text-lg font-medium text-[#111111]">
                   Session Open
                 </p>
               </>
             ) : (
               <>
                 <div className="size-3 rounded-full bg-gray-400"></div>
-                <p className="text-lg font-medium text-[#111111] dark:text-white">
+                <p className="text-lg font-medium text-[#111111]">
                   Session Closed
                 </p>
               </>
             )}
           </div>
-          <p className="mt-2 text-sm text-[#666666] dark:text-gray-400">
+          <p className="mt-2 text-sm text-[#666666]">
             {isOpen && session
               ? `Opened: ${format(new Date(session.opened_at), 'MMM d, h:mm a')}`
               : session?.closed_at
@@ -108,7 +112,7 @@ export default function SessionManagementModal({
             <button
               onClick={handleCloseSession}
               disabled={isProcessing}
-              className="flex h-12 w-full cursor-pointer items-center justify-center rounded-lg bg-[#111111] dark:bg-white text-base font-bold text-white dark:text-black hover:bg-[#333333] dark:hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex h-12 w-full cursor-pointer items-center justify-center rounded-lg bg-button-gray text-base font-bold text-gray-900 hover:bg-[#D0D0D0] disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-gray-200"
             >
               {isProcessing ? 'Closing...' : 'Close Session'}
             </button>
@@ -116,7 +120,7 @@ export default function SessionManagementModal({
             <button
               onClick={handleOpenSession}
               disabled={isProcessing}
-              className="flex h-12 w-full cursor-pointer items-center justify-center rounded-lg bg-[#111111] dark:bg-white text-base font-bold text-white dark:text-black hover:bg-[#333333] dark:hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex h-12 w-full cursor-pointer items-center justify-center rounded-lg bg-button-gray text-base font-bold text-gray-900 hover:bg-[#D0D0D0] disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-gray-200"
             >
               {isProcessing ? 'Opening...' : 'Open New Session'}
             </button>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Coffee Shop ERP - Edit Recipe</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#ffffff",
+              "background-light": "#f6f8f6",
+              "background-dark": "#000000",
+            },
+            fontFamily: {
+              "display": ["Work Sans", "Noto Sans", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        font-size: 24px;
+      }
+    </style>
+</head>
+<body class="bg-background-dark font-display">
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+<div class="w-full max-w-lg bg-[#0a0a0a] rounded-xl border border-gray-800 shadow-lg flex flex-col">
+<div class="flex items-center justify-between p-6 border-b border-gray-800">
+<h2 class="text-xl font-semibold text-white">Edit Recipe</h2>
+<button class="text-gray-400 hover:text-white">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="p-6 space-y-6 overflow-y-auto max-h-[70vh]">
+<div>
+<label class="block text-sm font-medium text-gray-400 mb-2" for="product-name">Product</label>
+<div class="relative">
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-2 focus:ring-gray-500 border border-gray-800 bg-gray-900 h-10 placeholder:text-gray-500 px-4 text-sm font-normal" disabled="" id="product-name" type="text" value="Latte"/>
+</div>
+</div>
+<div class="space-y-4">
+<p class="text-sm font-medium text-gray-400">Ingredients</p>
+<div class="space-y-3">
+<div class="flex items-center gap-3">
+<div class="flex-1">
+<label class="sr-only" for="ingredient-1">Ingredient</label>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-2 focus:ring-gray-500 border border-gray-800 bg-gray-900 h-10 placeholder:text-gray-500 px-4 text-sm font-normal" id="ingredient-1" type="text" value="Espresso Beans"/>
+</div>
+<div class="w-24">
+<label class="sr-only" for="quantity-1">Quantity</label>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-2 focus:ring-gray-500 border border-gray-800 bg-gray-900 h-10 placeholder:text-gray-500 px-4 text-sm font-normal text-right" id="quantity-1" type="number" value="18"/>
+</div>
+<div class="w-20">
+<label class="sr-only" for="unit-1">Unit</label>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-2 focus:ring-gray-500 border border-gray-800 bg-gray-900 h-10 placeholder:text-gray-500 px-4 text-sm font-normal" id="unit-1" type="text" value="g"/>
+</div>
+<button class="text-gray-500 hover:text-red-500 transition-colors">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex-1">
+<label class="sr-only" for="ingredient-2">Ingredient</label>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-2 focus:ring-gray-500 border border-gray-800 bg-gray-900 h-10 placeholder:text-gray-500 px-4 text-sm font-normal" id="ingredient-2" type="text" value="Whole Milk"/>
+</div>
+<div class="w-24">
+<label class="sr-only" for="quantity-2">Quantity</label>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-2 focus:ring-gray-500 border border-gray-800 bg-gray-900 h-10 placeholder:text-gray-500 px-4 text-sm font-normal text-right" id="quantity-2" type="number" value="240"/>
+</div>
+<div class="w-20">
+<label class="sr-only" for="unit-2">Unit</label>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-2 focus:ring-gray-500 border border-gray-800 bg-gray-900 h-10 placeholder:text-gray-500 px-4 text-sm font-normal" id="unit-2" type="text" value="ml"/>
+</div>
+<button class="text-gray-500 hover:text-red-500 transition-colors">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</div>
+<button class="flex min-w-[84px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-gray-900 text-white text-sm font-medium leading-normal tracking-wide hover:bg-gray-800 transition-colors border border-gray-800">
+<span class="material-symbols-outlined text-base mr-2">add</span>
+<span class="truncate">Add Ingredient</span>
+</button>
+</div>
+</div>
+<div class="flex justify-end gap-3 p-6 bg-[#000000] rounded-b-xl border-t border-gray-800">
+<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-gray-900 text-white text-sm font-medium leading-normal tracking-wide hover:bg-gray-800 transition-colors">
+<span class="truncate">Cancel</span>
+</button>
+<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-white text-black text-sm font-medium leading-normal tracking-wide hover:bg-gray-200 transition-colors">
+<span class="truncate">Save Changes</span>
+</button>
+</div>
+</div>
+</div>
+<div class="w-full h-screen bg-background-dark opacity-50"></div>
+
+</body></html>

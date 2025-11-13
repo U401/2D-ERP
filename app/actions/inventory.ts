@@ -84,3 +84,31 @@ export async function addProduct(
   return { success: true, error: null, product }
 }
 
+export async function updateIngredient(
+  id: string,
+  data: {
+    name?: string
+    unit?: string
+    category?: string
+    supplier_id?: string | null
+    cost?: number
+    low_stock_threshold?: number
+  }
+) {
+  const supabase = createServerClient()
+
+  const { data: ingredient, error } = await supabase
+    .from('ingredients')
+    .update(data)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) {
+    return { success: false, error: error.message, ingredient: null }
+  }
+
+  revalidatePath('/inventory')
+  return { success: true, error: null, ingredient }
+}
+

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Coffee Shop POS - Manage Products</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#ffffff",
+              "background-light": "#f6f8f6",
+              "background-dark": "#000000",
+            },
+            fontFamily: {
+              "display": ["Work Sans", "Noto Sans", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        font-size: 24px;
+      }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col">
+<div class="flex h-full min-h-screen">
+<aside class="flex h-auto min-h-screen w-64 flex-col bg-[#0a0a0a] p-4 border-r border-gray-800">
+<div class="flex flex-col justify-between h-full">
+<div class="flex flex-col gap-4">
+<div class="flex gap-3 items-center">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Abstract green and white circular pattern" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBt5yTfLFO4YzbhVgMuJUSJa4aqfgl44lWWT_p-QUUeW7b0jEoct0FkTFobyHMVvb408BUe3Z-CmDmnz7cmuj8pFklspdAfHEhkgZoH7Mo-9zxGJiDJ1ZVGEJI7BMS2mdMK1vSb60QKtjsWX5OC-VNdkrXQvHiaHCgESguhJTpahF9-U-S6XJckKFTaOCE62D0tutWUNsG7LlbS9GUmc6wgZBL-_U32VZ0Wa6_z0dBM2tdyr3FryFj0R7QY8E83dlyFKawGVtYB5lpD");'></div>
+<div class="flex flex-col">
+<h1 class="text-white text-base font-medium leading-normal">Admin User</h1>
+<p class="text-gray-400 text-sm font-normal leading-normal">Coffee Shop ERP</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2 mt-4">
+<a class="flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 rounded-lg" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<p class="text-sm font-medium leading-normal">Dashboard</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-900 text-white" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">storefront</span>
+<p class="text-sm font-medium leading-normal">POS</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 rounded-lg" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<p class="text-sm font-medium leading-normal">Inventory</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 rounded-lg" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<p class="text-sm font-medium leading-normal">Reports</p>
+</a>
+</nav>
+</div>
+<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-gray-900 text-white text-sm font-medium leading-normal tracking-wide hover:bg-gray-800 transition-colors">
+<span class="truncate">Session: Closed</span>
+</button>
+</div>
+</aside>
+<main class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+<div class="lg:col-span-2 flex flex-col gap-4 h-full">
+<div class="px-4 py-3 flex items-center justify-between gap-4">
+<h2 class="text-xl font-bold text-white">Manage Products</h2>
+<button class="flex items-center justify-center gap-2 h-12 px-4 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0">
+<span class="material-symbols-outlined">add</span>
+<span class="text-sm font-medium">Add New Product</span>
+</button>
+</div>
+<div class="flex flex-col bg-[#0a0a0a] rounded-xl overflow-hidden flex-grow">
+<div class="px-6 py-4 border-b border-gray-800">
+<label class="flex flex-col h-10 w-full max-w-sm">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+<div class="text-gray-400 flex border-none bg-gray-900 items-center justify-center pl-4 rounded-l-lg border-r-0">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-0 border-none bg-gray-900 focus:border-none h-full placeholder:text-gray-500 px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal" placeholder="Find a product..." value=""/>
+</div>
+</label>
+</div>
+<div class="flex-grow overflow-y-auto">
+<table class="w-full text-left">
+<thead class="sticky top-0 bg-[#0a0a0a] z-10">
+<tr class="border-b border-gray-800">
+<th class="px-6 py-3 text-xs font-medium uppercase text-gray-400">Product</th>
+<th class="px-6 py-3 text-xs font-medium uppercase text-gray-400">Category</th>
+<th class="px-6 py-3 text-xs font-medium uppercase text-gray-400">Price</th>
+<th class="px-6 py-3 text-xs font-medium uppercase text-gray-400 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-gray-800">
+<tr>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 bg-center bg-no-repeat aspect-square bg-cover rounded-md flex-shrink-0" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBmaOywTuwUY3KMNmO3lhsSN01dELPIMhFHSOHfdutkiuQCZ1OYJ0e8KHKfAIuD-G24MAUdRj33sPUee027fGljN2MtBStC4auKXZBfa674xs2foTOB4BaYQZ6YY4F9qcwv00iljZDrPRFxO-zWEnv2HGcpVAKGmtjJVnVnEnHkO1T28CBsrbiuyhDtXH0rz-w_ZdvlW3Mgq3mVm8eyIhMDntbTa0zfPBvijOd58xhxkF7mQLtkNY-uUhYEVhSVeVIXa-_T5U5p8GtL");'></div>
+<p class="text-white text-sm font-medium">Latte</p>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">Hot Coffee</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">$4.50</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"><span class="material-symbols-outlined !text-xl">edit</span></button>
+<button class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"><span class="material-symbols-outlined !text-xl">delete</span></button>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 bg-center bg-no-repeat aspect-square bg-cover rounded-md flex-shrink-0" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCSNFf0HnP45php-qNQX7XpCcDVZREwq4k9YyMaiiMfeMTS2Bi9APuSrc88DByD9olzKSpZb6fuQswxKw8Guc4pEcc6nKxosUF_y_la1eP7N0vy3X2A_dZ1BhM2XGr9MA-kmrDtgnqGN0k_LRbv9KaoMz3I-quCr5EJGcSJN1_Uet5nZ2fhrlTV2fZk7_wKlcMaai_41pGKFqnYqtX5TvMU2YCPuab7YkeIyaApERM9QgqyXD8_nCenvyYd6l24s19sz5bbiCh2wbRd");'></div>
+<p class="text-white text-sm font-medium">Cappuccino</p>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">Hot Coffee</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">$4.50</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"><span class="material-symbols-outlined !text-xl">edit</span></button>
+<button class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"><span class="material-symbols-outlined !text-xl">delete</span></button>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 bg-center bg-no-repeat aspect-square bg-cover rounded-md flex-shrink-0" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAkWGPAJmhTnhPPcABQBoLUJEZxfMcXMJbM-yEX8PWY66lLTmxrqTzDOG57Gud6BX8nw3EUDgL8OBN4_TO8E2qEr94SKl6nc6lpBaUnXQJoWKRIO1hQ-q4RK9rws3109jUpRP71PU_0BWdXizkX6HahYEUAgwlkG3fqiHR4xxRdAjlmh9fe23T6y0EmWG85jC6a4fJxFcStm5Q1-4DugtJ6HLLqBmPYytdGrJCDnpPjCompqU4igKb4a2iQ8-1dCMlhQ5PXmpdEF3dT");'></div>
+<p class="text-white text-sm font-medium">Americano</p>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">Hot Coffee</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">$3.75</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"><span class="material-symbols-outlined !text-xl">edit</span></button>
+<button class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"><span class="material-symbols-outlined !text-xl">delete</span></button>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 bg-center bg-no-repeat aspect-square bg-cover rounded-md flex-shrink-0" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCuomx4TetpsmwIaybo7lBibhCPx519Jvelyoq-2p-TsUmoFIiwdN2uN-I5ZhWEQbyXXC0l6-xTgVeyl92XH1aRTA3MqLtsZfrZtJdL7lhrH_FFRw7nVB5EFnP8adl2thR1ndavnDAi6mjMxFwR1kXMl2s_LkKwdcFiwyT-I7SVOvkXPnnfThlhD-ak3FitPr501l2w18avC1y5KbGXvinP8RzF3pgc6GthIc4lE098ZbW83HjMl-MuVqj8odKNWjCe9QT-xx_XC959");'></div>
+<p class="text-white text-sm font-medium">Espresso</p>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">Hot Coffee</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">$3.00</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"><span class="material-symbols-outlined !text-xl">edit</span></button>
+<button class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"><span class="material-symbols-outlined !text-xl">delete</span></button>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 bg-center bg-no-repeat aspect-square bg-cover rounded-md flex-shrink-0" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCa39gewbzBqcQkFhQ5_ETsjCQsCsZX9SOiJLuh96rbXAVFMvUOH_ouYOKbPxwfpHj4VLYXUzg0oitAAvIXH8KvXzEeobgjfl_GFgn47dc_0taC3DcoG-kPT75ixuR_DmKBGomsrKPoVloBgD6cd1m_60Dv7grK-dYbTfeBUqglJgWFNGM9TyOD3pddvziD2F5WWDbpYe4GRmncdjKGtC4txCRyiFB7AIHmen3iAFr_mLN8AZPKreJrfEdoXMsib0PI-aAx67UgXeUq");'></div>
+<p class="text-white text-sm font-medium">Mocha</p>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">Hot Coffee</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">$5.00</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"><span class="material-symbols-outlined !text-xl">edit</span></button>
+<button class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"><span class="material-symbols-outlined !text-xl">delete</span></button>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 bg-center bg-no-repeat aspect-square bg-cover rounded-md flex-shrink-0" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuATDEIHyE7QDc19zlHodBxxHPUCK6bHKxmtlIKXfz7kPnjytW7YNV7x05-iTJV5In__1UihjAh3LIEUqwPmLQFHh3vDxZtuUD4fi5Rnaw2Dzj4HC8GXEiSK-isFrjOnD6M-ivNYn_QHtSWpPvo2fOLc8D5lPQZNMQtZ9nYjd7lplRFFSpUHwfp-vde1f2YF1MJerTnG2zjkZ4WNA9JRnY3xJ3fsX_F0gOsLKmCpVVw-8SOvjfuLfYWZ5uq652_njSuj1YEtMWE7O52n");'></div>
+<p class="text-white text-sm font-medium">Macchiato</p>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">Hot Coffee</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">$3.50</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<button class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"><span class="material-symbols-outlined !text-xl">edit</span></button>
+<button class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"><span class="material-symbols-outlined !text-xl">delete</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="lg:col-span-1 bg-[#0a0a0a] rounded-xl p-6 flex flex-col h-fit">
+<h3 class="text-lg font-bold text-white mb-4">Add New Product</h3>
+<form class="flex flex-col gap-4">
+<div>
+<label class="text-gray-400 text-sm font-medium mb-2 block" for="product-name">Product Name</label>
+<input class="form-input w-full rounded-lg text-white bg-gray-900 border-gray-700 focus:border-white focus:ring-white" id="product-name" type="text"/>
+</div>
+<div>
+<label class="text-gray-400 text-sm font-medium mb-2 block" for="product-category">Category</label>
+<select class="form-select w-full rounded-lg text-white bg-gray-900 border-gray-700 focus:border-white focus:ring-white" id="product-category">
+<option>Hot Coffee</option>
+<option>Iced Drinks</option>
+<option>Pastries</option>
+<option>Specials</option>
+</select>
+</div>
+<div>
+<label class="text-gray-400 text-sm font-medium mb-2 block" for="product-price">Price</label>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">$</span>
+<input class="form-input w-full rounded-lg text-white bg-gray-900 border-gray-700 focus:border-white focus:ring-white pl-7" id="product-price" type="text"/>
+</div>
+</div>
+<div>
+<label class="text-gray-400 text-sm font-medium mb-2 block">Product Image</label>
+<div class="flex items-center justify-center w-full">
+<label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-700 border-dashed rounded-lg cursor-pointer bg-gray-900 hover:bg-gray-800">
+<div class="flex flex-col items-center justify-center pt-5 pb-6">
+<span class="material-symbols-outlined text-gray-500 mb-2">upload_file</span>
+<p class="mb-2 text-sm text-gray-400"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+<p class="text-xs text-gray-500">SVG, PNG, JPG (MAX. 800x400px)</p>
+</div>
+<input class="hidden" type="file"/>
+</label>
+</div>
+</div>
+<div class="border-t border-gray-800 my-2"></div>
+<div>
+<h4 class="text-gray-300 text-sm font-semibold mb-3">Recipe Ingredients</h4>
+<div class="space-y-3">
+<div class="flex items-center gap-2">
+<p class="text-sm text-white flex-1">Espresso Beans</p>
+<div class="flex items-center gap-2">
+<input class="form-input w-20 rounded-lg text-white text-sm bg-gray-900 border-gray-700 focus:border-white focus:ring-white text-center" type="number" value="18"/>
+<span class="text-sm text-gray-400">g</span>
+</div>
+<button class="p-2 text-gray-500 hover:text-white hover:bg-gray-800 rounded-md transition-colors" type="button"><span class="material-symbols-outlined !text-xl">delete</span></button>
+</div>
+<div class="flex items-center gap-2">
+<p class="text-sm text-white flex-1">Whole Milk</p>
+<div class="flex items-center gap-2">
+<input class="form-input w-20 rounded-lg text-white text-sm bg-gray-900 border-gray-700 focus:border-white focus:ring-white text-center" type="number" value="200"/>
+<span class="text-sm text-gray-400">ml</span>
+</div>
+<button class="p-2 text-gray-500 hover:text-white hover:bg-gray-800 rounded-md transition-colors" type="button"><span class="material-symbols-outlined !text-xl">delete</span></button>
+</div>
+</div>
+<div class="flex gap-2 mt-4">
+<select class="form-select w-full rounded-lg text-white bg-gray-900 border-gray-700 focus:border-white focus:ring-white">
+<option disabled="" selected="">Select an ingredient</option>
+<option>Vanilla Syrup</option>
+<option>Caramel Sauce</option>
+<option>Oat Milk</option>
+<option>Ice</option>
+</select>
+<button class="flex items-center justify-center gap-2 h-10 px-4 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors flex-shrink-0" type="button">
+<span class="material-symbols-outlined">add</span>
+<span class="text-sm font-medium">Add</span>
+</button>
+</div>
+</div>
+<div class="flex justify-end gap-3 mt-4">
+<button class="h-10 px-4 rounded-lg bg-gray-800 text-white text-sm font-medium hover:bg-gray-700 transition-colors" type="button">Cancel</button>
+<button class="h-10 px-4 rounded-lg bg-white text-black text-sm font-medium hover:bg-gray-200 transition-colors" type="submit">Save Product</button>
+</div>
+</form>
+</div>
+</main>
+</div>
+</div>
+</body></html>

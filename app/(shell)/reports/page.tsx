@@ -1,86 +1,212 @@
-import { createServerClient } from '@/lib/supabase/server'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { format, startOfDay, endOfDay, subDays } from 'date-fns'
 import IngredientUsageTable from '@/components/IngredientUsageTable'
 import ReportsSummary from '@/components/ReportsSummary'
 
-export default async function ReportsPage() {
-  const supabase = createServerClient()
+type DateRange = 'today' | 'last7days' | 'last30days'
 
-  // Get today's date range
-  const today = new Date()
-  const todayStart = startOfDay(today)
-  const todayEnd = endOfDay(today)
+export default function ReportsPage() {
+  const [dateRange, setDateRange] = useState<DateRange>('last30days')
+  const [salesData, setSalesData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-  // Get today's sessions
-  const { data: todaySessions } = await supabase
-    .from('sessions')
-    .select('*')
-    .gte('opened_at', todayStart.toISOString())
-    .lte('opened_at', todayEnd.toISOString())
-    .order('opened_at', { ascending: false })
+  useEffect(() => {
+    loadReportsData()
+  }, [dateRange])
 
-  // Get today's sales
-  const { data: todaySales } = await supabase
-    .from('sales')
-    .select('*, sale_items(*)')
-    .gte('sold_at', todayStart.toISOString())
-    .lte('sold_at', todayEnd.toISOString())
+  async function loadReportsData() {
+    setLoading(true)
+    const supabase = createClient()
 
-  // Calculate totals
-  const totalRevenue =
-    todaySales?.reduce((sum, sale) => sum + parseFloat(sale.total_amount.toString()), 0) || 0
-  const totalOrders = todaySales?.length || 0
-  const totalItems =
-    todaySales?.reduce(
-      (sum, sale) =>
-        sum +
-        (sale.sale_items as any[]).reduce((itemSum, item) => itemSum + item.quantity, 0),
-      0
-    ) || 0
-  const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
+    let startDate: Date
+    let endDate = endOfDay(new Date())
+    let previousStartDate: Date
+    let previousEndDate: Date
 
-  // Get top selling product
-  const productSales: Record<string, number> = {}
-  todaySales?.forEach((sale) => {
-    ;(sale.sale_items as any[]).forEach((item: any) => {
-      productSales[item.product_id] = (productSales[item.product_id] || 0) + item.quantity
+    switch (dateRange) {
+      case 'today':
+        startDate = startOfDay(new Date())
+        previousStartDate = startOfDay(subDays(new Date(), 1))
+        previousEndDate = endOfDay(subDays(new Date(), 1))
+        break
+      case 'last7days':
+        startDate = startOfDay(subDays(new Date(), 7))
+        previousStartDate = startOfDay(subDays(new Date(), 14))
+        previousEndDate = endOfDay(subDays(new Date(), 8))
+        break
+      case 'last30days':
+        startDate = startOfDay(subDays(new Date(), 30))
+        previousStartDate = startOfDay(subDays(new Date(), 60))
+        previousEndDate = endOfDay(subDays(new Date(), 31))
+        break
+      default:
+        startDate = startOfDay(subDays(new Date(), 30))
+        previousStartDate = startOfDay(subDays(new Date(), 60))
+        previousEndDate = endOfDay(subDays(new Date(), 31))
+    }
+
+    // Get current period sales
+    const { data: sales } = await supabase
+      .from('sales')
+      .select('*, sale_items(*, products(category, name))')
+      .gte('sold_at', startDate.toISOString())
+      .lte('sold_at', endDate.toISOString())
+      .order('sold_at', { ascending: true })
+
+    // Get previous period sales for comparison
+    const { data: previousSales } = await supabase
+      .from('sales')
+      .select('*, sale_items(*)')
+      .gte('sold_at', previousStartDate.toISOString())
+      .lte('sold_at', previousEndDate.toISOString())
+
+    // Calculate current period totals
+    const totalRevenue =
+      sales?.reduce((sum, sale) => sum + parseFloat(sale.total_amount.toString()), 0) || 0
+    const totalOrders = sales?.length || 0
+    const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
+
+    // Calculate previous period totals
+    const previousRevenue =
+      previousSales?.reduce((sum, sale) => sum + parseFloat(sale.total_amount.toString()), 0) || 0
+    const previousOrders = previousSales?.length || 0
+    const previousAvgOrderValue = previousOrders > 0 ? previousRevenue / previousOrders : 0
+
+    // Calculate percentage changes
+    const revenueChange =
+      previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0
+    const ordersChange =
+      previousOrders > 0 ? ((totalOrders - previousOrders) / previousOrders) * 100 : 0
+    const avgOrderChange =
+      previousAvgOrderValue > 0
+        ? ((avgOrderValue - previousAvgOrderValue) / previousAvgOrderValue) * 100
+        : 0
+
+    // Get top selling product
+    const productSales: Record<string, { quantity: number; name: string }> = {}
+    sales?.forEach((sale) => {
+      ;(sale.sale_items as any[]).forEach((item: any) => {
+        if (!productSales[item.product_id]) {
+          productSales[item.product_id] = {
+            quantity: 0,
+            name: item.products?.name || 'Unknown',
+          }
+        }
+        productSales[item.product_id].quantity += item.quantity
+      })
     })
-  })
 
-  const topProductId = Object.entries(productSales).sort((a, b) => b[1] - a[1])[0]?.[0]
-  let topProductName = 'N/A'
-  if (topProductId) {
-    const { data: product } = await supabase
-      .from('products')
-      .select('name')
-      .eq('id', topProductId)
-      .single()
-    topProductName = product?.name || 'N/A'
+    const topProductId = Object.entries(productSales).sort(
+      (a, b) => b[1].quantity - a[1].quantity
+    )[0]?.[0]
+    const topProductName = topProductId ? productSales[topProductId].name : 'N/A'
+
+    // Calculate sales by category
+    const categorySales: Record<string, number> = {}
+    sales?.forEach((sale) => {
+      ;(sale.sale_items as any[]).forEach((item: any) => {
+        const category = item.products?.category || 'Uncategorized'
+        const itemTotal = parseFloat(item.price.toString()) * item.quantity
+        categorySales[category] = (categorySales[category] || 0) + itemTotal
+      })
+    })
+
+    // Calculate daily sales for chart
+    const dailySales: Record<string, number> = {}
+    sales?.forEach((sale) => {
+      const date = format(new Date(sale.sold_at), 'yyyy-MM-dd')
+      dailySales[date] = (dailySales[date] || 0) + parseFloat(sale.total_amount.toString())
+    })
+
+    // Get previous period top product for comparison
+    const previousProductSales: Record<string, number> = {}
+    previousSales?.forEach((sale) => {
+      ;(sale.sale_items as any[]).forEach((item: any) => {
+        previousProductSales[item.product_id] =
+          (previousProductSales[item.product_id] || 0) + item.quantity
+      })
+    })
+    const previousTopProductId = Object.entries(previousProductSales).sort(
+      (a, b) => b[1] - a[1]
+    )[0]?.[0]
+    const topProductChange =
+      previousTopProductId === topProductId && previousProductSales[previousTopProductId]
+        ? ((productSales[topProductId]?.quantity || 0) - previousProductSales[previousTopProductId]) /
+          previousProductSales[previousTopProductId] /
+          100
+        : 0
+
+    setSalesData({
+      totalRevenue,
+      totalOrders,
+      avgOrderValue,
+      topProductName,
+      sales,
+      revenueChange,
+      ordersChange,
+      avgOrderChange,
+      topProductChange,
+      categorySales,
+      dailySales,
+      startDate,
+      endDate,
+    })
+    setLoading(false)
+  }
+
+  const getDateRangeLabel = () => {
+    switch (dateRange) {
+      case 'today':
+        return 'Today'
+      case 'last7days':
+        return 'Last 7 Days'
+      case 'last30days':
+        return 'Last 30 Days'
+      default:
+        return 'Last 30 Days'
+    }
+  }
+
+  if (loading || !salesData) {
+    return (
+      <div className="flex-1 p-4 sm:p-6 lg:p-8">
+        <div className="w-full max-w-7xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <p className="text-gray-500">Loading reports...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="flex-1 p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-7xl mx-auto">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-          <div className="flex flex-col">
-            <h1 className="text-3xl font-bold text-black dark:text-white">Reports Dashboard</h1>
-            <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-              Daily and session totals for your shop.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-md h-9 px-3 bg-white dark:bg-black text-black dark:text-white text-sm font-medium border border-slate-200 dark:border-gray-800 gap-2 hover:bg-slate-50 dark:hover:bg-gray-900 transition-colors">
-              <span
-                className="material-symbols-outlined text-slate-500 dark:text-gray-400"
-                style={{ fontSize: '20px' }}
+          <h1 className="text-3xl font-bold text-black">Reports Dashboard</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative inline-block text-left">
+              <select
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value as DateRange)}
+                className="appearance-none flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-md h-9 pl-3 pr-8 bg-input-gray text-slate-700 text-sm font-medium border border-gray-300 gap-2 hover:bg-[#E5E5E5] transition-colors"
               >
-                calendar_today
-              </span>
-              <span className="truncate">Today: {format(today, 'MMM d, yyyy')}</span>
-            </button>
+                <option value="last30days">Last 30 Days</option>
+                <option value="today">Today</option>
+                <option value="last7days">Last 7 Days</option>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-700">
+                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                  expand_more
+                </span>
+              </div>
+            </div>
             <a
-              href="/api/reports/ingredient-usage.csv"
-              className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-md h-9 px-3 bg-black text-white dark:bg-white dark:text-black text-sm font-medium gap-2 hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
+              href={`/api/reports/sales.csv?range=${dateRange}`}
+              className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-md h-9 px-3 bg-button-gray text-gray-900 text-sm font-medium gap-2 hover:bg-[#D0D0D0] transition-colors border border-gray-200"
             >
               <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
                 download
@@ -91,17 +217,24 @@ export default async function ReportsPage() {
         </div>
 
         <ReportsSummary
-          totalRevenue={totalRevenue}
-          totalOrders={totalOrders}
-          avgOrderValue={avgOrderValue}
-          topProductName={topProductName}
+          totalRevenue={salesData.totalRevenue}
+          totalOrders={salesData.totalOrders}
+          avgOrderValue={salesData.avgOrderValue}
+          topProductName={salesData.topProductName}
+          revenueChange={salesData.revenueChange}
+          ordersChange={salesData.ordersChange}
+          avgOrderChange={salesData.avgOrderChange}
+          topProductChange={salesData.topProductChange}
+          categorySales={salesData.categorySales}
+          dailySales={salesData.dailySales}
+          startDate={salesData.startDate}
+          endDate={salesData.endDate}
         />
 
         <div className="mt-8">
-          <IngredientUsageTable />
+          <IngredientUsageTable dateRange={dateRange} />
         </div>
       </div>
     </div>
   )
 }
-

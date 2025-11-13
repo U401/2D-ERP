@@ -12,7 +12,8 @@ const SaleItemSchema = z.object({
 
 export async function finalizeSale(
   sessionId: string,
-  items: Array<{ product_id: string; quantity: number; unit_price?: number }>
+  items: Array<{ product_id: string; quantity: number; unit_price?: number }>,
+  paymentMethod: 'cash' | 'card' = 'cash'
 ) {
   const supabase = createServerClient()
 
@@ -22,6 +23,7 @@ export async function finalizeSale(
   const { data, error } = await supabase.rpc('finalize_sale', {
     p_session_id: sessionId,
     p_items: validatedItems,
+    p_payment_method: paymentMethod,
   })
 
   if (error) {

@@ -13,6 +13,8 @@ const config: Config = {
         primary: '#111111',
         'background-light': '#f6f8f6',
         'background-dark': '#101010',
+        'input-gray': '#ECECEC',
+        'button-gray': '#DEDEDE',
       },
       fontFamily: {
         display: ['var(--font-work-sans)', 'sans-serif'],

@@ -1,22 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { restockIngredient } from '@/app/actions/inventory'
-
-type Ingredient = {
-  id: string
-  name: string
-  unit: string
-}
+import { addSupplier } from '@/app/actions/suppliers'
 
 type Props = {
-  ingredient: Ingredient
   onClose: () => void
 }
 
-export default function RestockModal({ ingredient, onClose }: Props) {
-  const [quantity, setQuantity] = useState('')
-  const [cost, setCost] = useState('')
+export default function AddSupplierModal({ onClose }: Props) {
+  const [formData, setFormData] = useState({
+    name: '',
+    contact_person: '',
+    phone: '',
+    email: '',
+  })
   const [isProcessing, setIsProcessing] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -24,12 +21,7 @@ export default function RestockModal({ ingredient, onClose }: Props) {
     setIsProcessing(true)
 
     try {
-      const result = await restockIngredient({
-        ingredient_id: ingredient.id,
-        quantity: parseFloat(quantity),
-        cost: parseFloat(cost),
-      })
-
+      const result = await addSupplier(formData)
       if (result.success) {
         onClose()
       } else {
@@ -46,9 +38,7 @@ export default function RestockModal({ ingredient, onClose }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="relative w-full max-w-lg rounded-xl bg-white border border-gray-200 shadow-2xl flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-900">
-            Restock {ingredient.name}
-          </h3>
+          <h3 className="text-xl font-semibold text-gray-900">Add New Supplier</h3>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-900 transition-colors"
@@ -60,30 +50,44 @@ export default function RestockModal({ ingredient, onClose }: Props) {
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="grid grid-cols-1 gap-6">
             <label className="flex flex-col">
-              <p className="text-sm font-medium text-gray-700 pb-2">Quantity ({ingredient.unit})</p>
+              <p className="text-sm font-medium text-gray-700 pb-2">Supplier Name</p>
               <input
                 required
-                type="number"
-                min="0.01"
-                step="0.01"
                 className="form-input w-full rounded-lg text-gray-900 bg-input-gray border border-gray-300 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 h-12 px-4 placeholder:text-gray-500 text-base font-normal"
-                placeholder="0.00"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
+                placeholder="Enter supplier name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </label>
 
             <label className="flex flex-col">
-              <p className="text-sm font-medium text-gray-700 pb-2">Cost per Unit</p>
+              <p className="text-sm font-medium text-gray-700 pb-2">Contact Person (Optional)</p>
               <input
-                required
-                type="number"
-                min="0"
-                step="0.01"
                 className="form-input w-full rounded-lg text-gray-900 bg-input-gray border border-gray-300 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 h-12 px-4 placeholder:text-gray-500 text-base font-normal"
-                placeholder="0.00"
-                value={cost}
-                onChange={(e) => setCost(e.target.value)}
+                placeholder="Enter contact name"
+                value={formData.contact_person}
+                onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })}
+              />
+            </label>
+
+            <label className="flex flex-col">
+              <p className="text-sm font-medium text-gray-700 pb-2">Phone Number</p>
+              <input
+                className="form-input w-full rounded-lg text-gray-900 bg-input-gray border border-gray-300 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 h-12 px-4 placeholder:text-gray-500 text-base font-normal"
+                placeholder="Enter phone number"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+            </label>
+
+            <label className="flex flex-col">
+              <p className="text-sm font-medium text-gray-700 pb-2">Email Address</p>
+              <input
+                type="email"
+                className="form-input w-full rounded-lg text-gray-900 bg-input-gray border border-gray-300 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 h-12 px-4 placeholder:text-gray-500 text-base font-normal"
+                placeholder="Enter email address"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </label>
           </div>
@@ -99,9 +103,9 @@ export default function RestockModal({ ingredient, onClose }: Props) {
             <button
               type="submit"
               disabled={isProcessing}
-              className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-gray-100 text-gray-900 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200"
+              className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-button-gray text-gray-900 hover:bg-[#D0D0D0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200"
             >
-              {isProcessing ? 'Restocking...' : 'Restock'}
+              {isProcessing ? 'Adding...' : 'Add Supplier'}
             </button>
           </div>
         </form>
