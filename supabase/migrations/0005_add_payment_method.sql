@@ -5,3 +5,8 @@ ALTER TABLE sales
 CREATE INDEX idx_sales_payment_method ON sales(payment_method);
 
 
+
+
+
+
+

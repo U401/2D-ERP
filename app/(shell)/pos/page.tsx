@@ -5,7 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 import { openSession, closeSession } from '@/app/actions/session'
 import { finalizeSale } from '@/app/actions/sales'
 import SessionManagementModal from '@/components/modals/SessionManagementModal'
+import GCashPaymentModal from '@/components/modals/GCashPaymentModal'
 import { format } from 'date-fns'
+import type { GCashVerificationResult } from '@/lib/types/gcash'
 
 type Product = {
   id: string
@@ -31,7 +33,10 @@ type Sale = {
   id: string
   total_amount: number
   sold_at: string
-  payment_method: 'cash' | 'card' | null
+  payment_method: 'cash' | 'card' | 'gcash' | null
+  gcash_reference_code?: string | null
+  gcash_transaction_timestamp_utc?: string | null
+  gcash_verification_status?: string | null
   sale_items: Array<{
     id: string
     product_id: string
@@ -55,7 +60,8 @@ export default function PosPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [activeTab, setActiveTab] = useState<'order' | 'history'>('order')
   const [orderHistory, setOrderHistory] = useState<Sale[]>([])
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash')
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'gcash'>('cash')
+  const [showGCashModal, setShowGCashModal] = useState(false)
   const [taxRate] = useState(0.08) // 8% tax rate
   const [selectedOrder, setSelectedOrder] = useState<Sale | null>(null)
   const [showOrderModal, setShowOrderModal] = useState(false)
@@ -63,7 +69,11 @@ export default function PosPage() {
   useEffect(() => {
     loadProducts()
     loadCurrentSession()
+  }, [])
+
+  useEffect(() => {
     if (activeTab === 'history') {
+      // Always refresh history when switching to history tab
       loadOrderHistory()
     }
   }, [activeTab])
@@ -96,13 +106,25 @@ export default function PosPage() {
 
   async function loadOrderHistory() {
     const supabase = createClient()
-    const { data } = await supabase
+    // Load all sales including GCash transactions - no payment method filter
+    // Ensure we get all payment methods: cash, card, and gcash
+    const { data, error } = await supabase
       .from('sales')
       .select('*, sale_items(*, products(id, name, image_url))')
       .order('sold_at', { ascending: false })
       .limit(20)
     
+    if (error) {
+      console.error('Error loading order history:', error)
+      return
+    }
+    
     if (data) {
+      console.log('Loaded order history:', {
+        totalSales: data.length,
+        paymentMethods: data.map(s => s.payment_method),
+        gcashSales: data.filter(s => s.payment_method === 'gcash').length,
+      })
       setOrderHistory(data as Sale[])
     }
   }
@@ -141,8 +163,14 @@ export default function PosPage() {
     setCart((prev) => prev.filter((item) => item.product.id !== productId))
   }
 
-  async function handleFinalizeSale() {
-    if (!session || cart.length === 0) return
+  async function handleFinalizeSale(gcashData?: {
+    referenceCode: string
+    transactionTimestamp: Date
+    imageUrl: string | null
+  }): Promise<{ success: boolean; error?: string }> {
+    if (!session || cart.length === 0) {
+      return { success: false, error: 'Session not open or cart is empty' }
+    }
 
     setIsProcessing(true)
     try {
@@ -152,23 +180,87 @@ export default function PosPage() {
         unit_price: item.product.price,
       }))
 
-      const result = await finalizeSale(session.id, items, paymentMethod)
+      const result = await finalizeSale(
+        session.id,
+        items,
+        paymentMethod,
+        paymentMethod === 'gcash' ? gcashData : undefined
+      )
 
       if (result.success) {
         setCart([])
         setPaymentMethod('cash') // Reset to default
+        setShowGCashModal(false)
         alert('Sale completed successfully!')
         await loadCurrentSession()
-        if (activeTab === 'history') {
-          await loadOrderHistory()
-        }
+        // Always refresh history so it's up-to-date when user switches to history tab
+        // Add delay to ensure database transaction has committed
+        await new Promise(resolve => setTimeout(resolve, 500))
+        await loadOrderHistory()
+        return { success: true }
       } else {
         alert(`Error: ${result.error}`)
+        return { success: false, error: result.error || 'Unknown error' }
       }
     } catch (error) {
-      alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      alert(`Error: ${errorMessage}`)
+      return { success: false, error: errorMessage }
     } finally {
       setIsProcessing(false)
+    }
+  }
+
+  async function handleGCashConfirm(
+    verificationResult: GCashVerificationResult & { imageUrl: string | null }
+  ) {
+    // Ensure session is still open before finalizing
+    if (!session) {
+      alert('Session is not open. Please open a session before processing GCash payments.')
+      setShowGCashModal(false)
+      return
+    }
+    
+    // Ensure cart is not empty
+    if (cart.length === 0) {
+      alert('No items in cart. Please add items before processing GCash payments.')
+      setShowGCashModal(false)
+      return
+    }
+    
+    if (
+      verificationResult.success &&
+      verificationResult.status === 'confirmed' &&
+      verificationResult.transactionData
+    ) {
+      try {
+        // Convert timestamp to Date object if it's a string (JSON serialization)
+        const timestamp = verificationResult.transactionData.transactionTimestamp instanceof Date
+          ? verificationResult.transactionData.transactionTimestamp
+          : new Date(verificationResult.transactionData.transactionTimestamp)
+        
+        const result = await handleFinalizeSale({
+          referenceCode: verificationResult.transactionData.referenceCode,
+          transactionTimestamp: timestamp,
+          imageUrl: verificationResult.imageUrl,
+        })
+        
+        // Refresh history after GCash sale completes
+        // handleFinalizeSale already calls loadOrderHistory, but we'll ensure it happens
+        if (result && result.success) {
+          // Additional refresh with delay to ensure database has committed
+          // Use await instead of setTimeout to ensure it completes
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          await loadOrderHistory()
+        }
+      } catch (error) {
+        console.error('Error finalizing GCash sale:', error)
+        alert(`Error processing payment: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
+    } else {
+      // Verification failed - show error
+      const errorMsg = verificationResult.error || `Transaction rejected: ${verificationResult.rejectionReason || 'Unknown reason'}`
+      alert(errorMsg)
     }
   }
 
@@ -403,31 +495,70 @@ export default function PosPage() {
                 </div>
 
                 {/* Payment Method Selection */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => setPaymentMethod('cash')}
-                    className={`flex items-center justify-center h-10 px-4 rounded-lg text-sm font-bold tracking-wide transition-colors border ${
+                    className={`flex items-center justify-center h-10 px-2 rounded-lg text-sm font-bold tracking-wide transition-colors border ${
                       paymentMethod === 'cash'
                         ? 'bg-gray-800 text-white border-gray-800'
                         : 'bg-button-gray text-gray-900 hover:bg-[#D0D0D0] border-gray-200'
                     }`}
                   >
-                    Cash
+                    <span className="material-symbols-outlined text-base mr-1">payments</span>
+                    <span>Cash</span>
                   </button>
                   <button
                     onClick={() => setPaymentMethod('card')}
-                    className={`flex items-center justify-center h-10 px-4 rounded-lg text-sm font-bold tracking-wide transition-colors border ${
+                    className={`flex items-center justify-center h-10 px-2 rounded-lg text-sm font-bold tracking-wide transition-colors border ${
                       paymentMethod === 'card'
                         ? 'bg-gray-800 text-white border-gray-800'
                         : 'bg-button-gray text-gray-900 hover:bg-[#D0D0D0] border-gray-200'
                     }`}
                   >
-                    Card
+                    <span className="material-symbols-outlined text-base mr-1">credit_card</span>
+                    <span>Card</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!session) {
+                        alert('Please open a session before processing GCash payments.')
+                        return
+                      }
+                      if (cart.length === 0) {
+                        alert('Please add items to cart before processing GCash payments.')
+                        return
+                      }
+                      setPaymentMethod('gcash')
+                      setShowGCashModal(true)
+                    }}
+                    disabled={!session || cart.length === 0}
+                    className={`flex items-center justify-center h-10 px-2 rounded-lg text-sm font-bold tracking-wide transition-colors border ${
+                      paymentMethod === 'gcash'
+                        ? 'bg-gray-800 text-white border-gray-800'
+                        : 'bg-button-gray text-gray-900 hover:bg-[#D0D0D0] border-gray-200'
+                    } ${!session || cart.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <span className="material-symbols-outlined text-base mr-1">qr_code_scanner</span>
+                    <span>GCash</span>
                   </button>
                 </div>
 
                 <button
-                  onClick={handleFinalizeSale}
+                  onClick={() => {
+                    if (!session) {
+                      alert('Please open a session before processing payments.')
+                      return
+                    }
+                    if (cart.length === 0) {
+                      alert('Please add items to cart before processing payments.')
+                      return
+                    }
+                    if (paymentMethod === 'gcash') {
+                      setShowGCashModal(true)
+                    } else {
+                      handleFinalizeSale()
+                    }
+                  }}
                   disabled={!session || cart.length === 0 || isProcessing}
                   className="w-full flex items-center justify-center h-12 px-4 rounded-lg bg-button-gray text-gray-900 text-sm font-bold tracking-wide hover:bg-[#D0D0D0] disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-gray-200"
                 >
@@ -479,7 +610,7 @@ export default function PosPage() {
                           ${totalWithTax.toFixed(2)}
                         </p>
                         <p className="text-gray-500 text-xs capitalize">
-                          {sale.payment_method || 'N/A'}
+                          {sale.payment_method === 'gcash' ? 'GCash' : sale.payment_method || 'N/A'}
                         </p>
                       </div>
                     </div>
@@ -515,6 +646,17 @@ export default function PosPage() {
             }
             return result
           }}
+        />
+      )}
+
+      {showGCashModal && session && (
+        <GCashPaymentModal
+          totalAmount={total}
+          onClose={() => {
+            setShowGCashModal(false)
+            setPaymentMethod('cash') // Reset to cash if modal is closed
+          }}
+          onConfirm={handleGCashConfirm}
         />
       )}
 
@@ -599,8 +741,13 @@ export default function PosPage() {
               <div className="pt-4 border-t border-gray-200">
                 <p className="text-sm font-medium text-gray-600">Payment</p>
                 <p className="text-base text-gray-900 font-medium capitalize">
-                  Paid with {selectedOrder.payment_method || 'N/A'}
+                  Paid with {selectedOrder.payment_method === 'gcash' ? 'GCash' : selectedOrder.payment_method || 'N/A'}
                 </p>
+                {selectedOrder.payment_method === 'gcash' && selectedOrder.gcash_reference_code && (
+                  <p className="text-sm text-gray-500 font-mono mt-1">
+                    Reference: {selectedOrder.gcash_reference_code}
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex justify-end gap-3 p-6 bg-gray-50 rounded-b-xl border-t border-gray-200">
