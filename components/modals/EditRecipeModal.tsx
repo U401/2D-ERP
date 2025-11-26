@@ -225,6 +225,7 @@ export default function EditRecipeModal({
                         </label>
                         <input
                           id={`quantity-${index}`}
+                          name={`quantity-${index}`}
                           type="number"
                           min="0"
                           step="0.01"
@@ -245,6 +246,7 @@ export default function EditRecipeModal({
                         </label>
                         <input
                           id={`unit-${index}`}
+                          name={`unit-${index}`}
                           type="text"
                           value={item.unit}
                           disabled

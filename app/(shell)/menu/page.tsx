@@ -235,7 +235,7 @@ export default function MenuPage() {
       await loadCategories()
       if (editingProduct?.id === productId) {
         setEditingProduct(null)
-        setFormData({ name: '', category: '', price: '' })
+        setFormData({ name: '', category: '', price: '', image_url: '' })
         setRecipeItems([])
       }
     } else {
@@ -392,7 +392,7 @@ export default function MenuPage() {
                 onClick={() => {
                   setEditingProduct({ id: '', name: '', price: 0, category: null } as Product)
                   setEditingCategory(null)
-                  setFormData({ name: '', category: '', price: '' })
+                  setFormData({ name: '', category: '', price: '', image_url: '' })
                   setRecipeItems([])
                 }}
                 className="flex items-center justify-center gap-2 h-12 px-4 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
@@ -410,6 +410,10 @@ export default function MenuPage() {
                       <span className="material-symbols-outlined">search</span>
                     </div>
                     <input
+                      id="menu-search"
+                      name="menu-search"
+                      type="search"
+                      suppressHydrationWarning
                       className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 focus:outline-0 focus:ring-0 border-none bg-input-gray focus:border-none h-full placeholder:text-gray-500 px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
                       placeholder="Find a product..."
                       value={searchQuery}

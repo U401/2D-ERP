@@ -62,6 +62,8 @@ export default function RestockModal({ ingredient, onClose }: Props) {
             <label className="flex flex-col">
               <p className="text-sm font-medium text-gray-700 pb-2">Quantity ({ingredient.unit})</p>
               <input
+                id="restock-quantity"
+                name="restock-quantity"
                 required
                 type="number"
                 min="0.01"
@@ -76,6 +78,8 @@ export default function RestockModal({ ingredient, onClose }: Props) {
             <label className="flex flex-col">
               <p className="text-sm font-medium text-gray-700 pb-2">Cost per Unit</p>
               <input
+                id="restock-cost"
+                name="restock-cost"
                 required
                 type="number"
                 min="0"

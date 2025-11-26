@@ -47,3 +47,24 @@ export async function getCurrentSession() {
   return { success: true, error: null, session: data }
 }
 
+export async function closeAllSessions() {
+  const supabase = createServerClient()
+  
+  // Directly update all open sessions to closed
+  const { data, error } = await supabase
+    .from('sessions')
+    .update({ 
+      status: 'closed', 
+      closed_at: new Date().toISOString() 
+    })
+    .eq('status', 'open')
+    .select()
+
+  if (error) {
+    return { success: false, error: error.message, closedCount: 0 }
+  }
+
+  revalidatePath('/pos')
+  return { success: true, error: null, closedCount: data?.length || 0 }
+}
+

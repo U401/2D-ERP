@@ -261,7 +261,7 @@ export default function InventoryPage() {
                 onChange={(e) => setSelectedCategory(e.target.value)}
               >
                 <option value="">All Categories</option>
-                {categories.map((cat) => (
+                {categories.filter((cat): cat is string => cat !== null).map((cat) => (
                   <option key={cat} value={cat}>
                     {cat}
                   </option>

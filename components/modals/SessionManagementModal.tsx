@@ -36,15 +36,24 @@ export default function SessionManagementModal({
         await new Promise((resolve) => setTimeout(resolve, 200))
         await onClose()
       } else {
-        alert(`Error: ${result.error}`)
+        const errorMessage = result.error || 'Failed to open session. Please try again.'
+        alert(`Error: ${errorMessage}`)
+        console.error('Failed to open session:', result)
       }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
+      alert(`Error: ${errorMessage}`)
+      console.error('Exception while opening session:', error)
     } finally {
       setIsProcessing(false)
     }
   }
 
   async function handleCloseSession() {
-    if (!session) return
+    if (!session) {
+      alert('No session to close')
+      return
+    }
     setIsProcessing(true)
     try {
       const result = await onCloseSession(session.id)
@@ -53,14 +62,23 @@ export default function SessionManagementModal({
         await new Promise((resolve) => setTimeout(resolve, 200))
         await onClose()
       } else {
-        alert(`Error: ${result.error}`)
+        const errorMessage = result.error || 'Failed to close session. Please try again.'
+        alert(`Error: ${errorMessage}`)
+        console.error('Failed to close session:', result)
       }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
+      alert(`Error: ${errorMessage}`)
+      console.error('Exception while closing session:', error)
     } finally {
       setIsProcessing(false)
     }
   }
 
   const isOpen = session?.status === 'open'
+
+  // Debug logging
+  console.log('SessionManagementModal - session:', session, 'isOpen:', isOpen)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">

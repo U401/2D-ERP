@@ -23,6 +23,9 @@ export interface GCashVerificationResult {
   rejectionReason?: GCashRejectionReason
   transactionData?: GCashTransactionData
   error?: string
+  debug?: {
+    ocrTextPreview: string
+  }
 }
 
 export interface GCashOCRResult {

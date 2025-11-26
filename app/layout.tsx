@@ -36,6 +36,45 @@ export default function RootLayout({
         className={`${workSans.variable} font-display bg-background-light text-slate-900`}
       >
         {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                  // Unregister any existing service workers first to avoid conflicts
+                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for (var i = 0; i < registrations.length; i++) {
+                      registrations[i].unregister().then(function() {
+                        console.log('Unregistered existing service worker');
+                      });
+                    }
+                  });
+                  
+                  // Small delay before registering to ensure unregistration completes
+                  setTimeout(function() {
+                    window.addEventListener('load', function() {
+                      navigator.serviceWorker
+                        .register('/sw.js')
+                        .then(function(registration) {
+                          console.log('Service Worker registered successfully:', registration.scope);
+                          setInterval(function() {
+                            registration.update();
+                          }, 60 * 60 * 1000);
+                        })
+                        .catch(function(error) {
+                          console.error('Service Worker registration failed:', error);
+                        });
+                      navigator.serviceWorker.addEventListener('controllerchange', function() {
+                        console.log('Service Worker controller changed, reloading page...');
+                        window.location.reload();
+                      });
+                    });
+                  }, 100);
+                }
+              })();
+            `,
+          }}
+        />
       </body>
     </html>
   )

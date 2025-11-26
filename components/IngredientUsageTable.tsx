@@ -66,9 +66,10 @@ export default function IngredientUsageTable({ dateRange = 'last30days' }: Props
       ])
     )
 
+    type UsageInfo = { used_quantity: number; remaining_stock: number }
     const tableData =
-      allIngredients?.map((ing) => {
-        const usageInfo = usageMap.get(ing.id) || { used_quantity: 0, remaining_stock: ing.current_stock }
+      (allIngredients || []).map((ing: any) => {
+        const usageInfo: UsageInfo = (usageMap.get(ing.id) as UsageInfo | undefined) || { used_quantity: 0, remaining_stock: ing.current_stock || 0 }
         const startingQty = usageInfo.remaining_stock + usageInfo.used_quantity
         return {
           ...ing,

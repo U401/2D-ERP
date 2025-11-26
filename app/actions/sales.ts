@@ -67,11 +67,15 @@ export async function finalizeSale(
     }
   }
 
-  // Prepare RPC parameters
+  // Prepare RPC parameters - always include all parameters to avoid ambiguity
+  // The function signature is: finalize_sale(p_session_id, p_items, p_payment_method, p_gcash_reference_code, p_gcash_transaction_timestamp_utc, p_gcash_image_url)
   const rpcParams: any = {
     p_session_id: sessionId,
     p_items: validatedItems,
     p_payment_method: paymentMethod,
+    p_gcash_reference_code: null,
+    p_gcash_transaction_timestamp_utc: null,
+    p_gcash_image_url: null,
   }
 
   // Add GCash-specific parameters if payment method is GCash

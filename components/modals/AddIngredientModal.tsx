@@ -136,6 +136,8 @@ export default function AddIngredientModal({ onClose }: Props) {
               <label className="flex flex-col">
                 <p className="text-sm font-medium text-gray-700 pb-2">Current Stock</p>
                 <input
+                  id="ingredient-current-stock"
+                  name="ingredient-current-stock"
                   type="number"
                   min="0"
                   step="0.01"
@@ -154,6 +156,8 @@ export default function AddIngredientModal({ onClose }: Props) {
               <label className="flex flex-col">
                 <p className="text-sm font-medium text-gray-700 pb-2">Cost per Unit</p>
                 <input
+                  id="ingredient-cost"
+                  name="ingredient-cost"
                   type="number"
                   min="0"
                   step="0.01"
@@ -183,6 +187,8 @@ export default function AddIngredientModal({ onClose }: Props) {
                 </div>
               </div>
               <input
+                id="ingredient-low-stock-threshold"
+                name="ingredient-low-stock-threshold"
                 type="number"
                 min="0"
                 step="0.01"

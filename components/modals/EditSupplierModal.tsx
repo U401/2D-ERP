@@ -73,6 +73,8 @@ export default function EditSupplierModal({
               <label className="flex flex-col">
                 <p className="text-sm font-medium text-gray-700 pb-2">Supplier Name</p>
                 <input
+                  id="edit-supplier-name"
+                  name="edit-supplier-name"
                   required
                   className="form-input w-full rounded-lg text-gray-900 bg-input-gray border border-gray-300 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 h-12 px-4 placeholder:text-gray-500 text-base font-normal"
                   placeholder="Enter supplier name"
@@ -86,6 +88,8 @@ export default function EditSupplierModal({
                   Contact Person (Optional)
                 </p>
                 <input
+                  id="edit-supplier-contact-person"
+                  name="edit-supplier-contact-person"
                   className="form-input w-full rounded-lg text-gray-900 bg-input-gray border border-gray-300 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 h-12 px-4 placeholder:text-gray-500 text-base font-normal"
                   placeholder="Enter contact name"
                   value={formData.contact_person}
@@ -98,6 +102,9 @@ export default function EditSupplierModal({
               <label className="flex flex-col">
                 <p className="text-sm font-medium text-gray-700 pb-2">Phone Number</p>
                 <input
+                  id="edit-supplier-phone"
+                  name="edit-supplier-phone"
+                  type="tel"
                   className="form-input w-full rounded-lg text-gray-900 bg-input-gray border border-gray-300 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 h-12 px-4 placeholder:text-gray-500 text-base font-normal"
                   placeholder="Enter phone number"
                   value={formData.phone}
@@ -108,6 +115,8 @@ export default function EditSupplierModal({
               <label className="flex flex-col">
                 <p className="text-sm font-medium text-gray-700 pb-2">Email Address</p>
                 <input
+                  id="edit-supplier-email"
+                  name="edit-supplier-email"
                   type="email"
                   className="form-input w-full rounded-lg text-gray-900 bg-input-gray border border-gray-300 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 h-12 px-4 placeholder:text-gray-500 text-base font-normal"
                   placeholder="Enter email address"

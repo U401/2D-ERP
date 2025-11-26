@@ -3,11 +3,19 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { openSession, closeSession } from '@/app/actions/session'
-import { finalizeSale } from '@/app/actions/sales'
 import SessionManagementModal from '@/components/modals/SessionManagementModal'
 import GCashPaymentModal from '@/components/modals/GCashPaymentModal'
+import QueuedSalesModal from '@/components/modals/QueuedSalesModal'
 import { format } from 'date-fns'
 import type { GCashVerificationResult } from '@/lib/types/gcash'
+import { checkQueuedSales, getQueuedSalesCount } from '@/lib/utils/queued-sales'
+import { 
+  storeOfflineSale, 
+  getOfflineSales, 
+  removeOfflineSale,
+  getOfflineSalesCount as getLocalOfflineSalesCount,
+  type OfflineSale 
+} from '@/lib/utils/offline-sales-storage'
 
 type Product = {
   id: string
@@ -65,19 +73,10 @@ export default function PosPage() {
   const [taxRate] = useState(0.08) // 8% tax rate
   const [selectedOrder, setSelectedOrder] = useState<Sale | null>(null)
   const [showOrderModal, setShowOrderModal] = useState(false)
+  const [queuedSalesCount, setQueuedSalesCount] = useState(0)
+  const [showQueuedSalesModal, setShowQueuedSalesModal] = useState(false)
 
-  useEffect(() => {
-    loadProducts()
-    loadCurrentSession()
-  }, [])
-
-  useEffect(() => {
-    if (activeTab === 'history') {
-      // Always refresh history when switching to history tab
-      loadOrderHistory()
-    }
-  }, [activeTab])
-
+  // Define all functions before useEffect hooks to avoid hoisting issues
   async function loadProducts() {
     const supabase = createClient()
     const { data } = await supabase.from('products').select('*').order('name')
@@ -86,22 +85,23 @@ export default function PosPage() {
 
   async function loadCurrentSession() {
     // Query directly from client to get most up-to-date data
+    // Only get the single open session (there should only be one)
     const supabase = createClient()
     const { data, error } = await supabase
       .from('sessions')
       .select('*')
       .eq('status', 'open')
-      .single()
+      .order('opened_at', { ascending: false })
+      .limit(1)
 
-    if (error && error.code !== 'PGRST116') {
-      // Error other than "not found" - set to null
+    if (error) {
+      console.error('Error loading session:', error)
       setSession(null)
-    } else if (data) {
-      setSession(data as Session)
-    } else {
-      // No open session found
-      setSession(null)
+      return
     }
+
+    // Handle array response (limit(1) returns an array)
+    setSession(data && data.length > 0 ? data[0] : null)
   }
 
   async function loadOrderHistory() {
@@ -121,13 +121,145 @@ export default function PosPage() {
     
     if (data) {
       console.log('Loaded order history:', {
-        totalSales: data.length,
-        paymentMethods: data.map(s => s.payment_method),
-        gcashSales: data.filter(s => s.payment_method === 'gcash').length,
+        count: data.length,
+        sales: data.map(s => ({ id: s.id, payment_method: s.payment_method, total: s.total }))
       })
-      setOrderHistory(data as Sale[])
+      setOrderHistory(data)
     }
   }
+
+  async function checkQueuedSalesStatus() {
+    try {
+      console.log('Checking for queued sales...')
+      // Check both Background Sync queue and localStorage fallback
+      const bgSyncCount = await getQueuedSalesCount()
+      const localCount = getLocalOfflineSalesCount()
+      const totalCount = bgSyncCount + localCount
+      
+      console.log(`Queued sales count - Background Sync: ${bgSyncCount}, localStorage: ${localCount}, Total: ${totalCount}`)
+      setQueuedSalesCount(totalCount)
+      
+      if (totalCount > 0) {
+        const bgSyncSales = await checkQueuedSales()
+        const localSales = getOfflineSales()
+        console.log(`Found ${bgSyncCount} Background Sync sales and ${localCount} localStorage sales`)
+      } else {
+        console.log('No queued sales found')
+      }
+    } catch (error) {
+      console.error('Error checking queued sales:', error)
+      // Fallback to localStorage count
+      const localCount = getLocalOfflineSalesCount()
+      setQueuedSalesCount(localCount)
+    }
+  }
+
+
+  useEffect(() => {
+    loadProducts()
+    loadCurrentSession()
+    checkQueuedSalesStatus() // Check for queued sales on mount
+    
+    // Set up real-time subscription to track the single open session
+    const supabase = createClient()
+    
+    // Subscribe to all session changes to track the single open session
+    const channel = supabase
+      .channel('session-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'sessions',
+        },
+        async (payload) => {
+          // When a session is opened
+          if (payload.eventType === 'INSERT' && payload.new?.status === 'open') {
+            // Reload to ensure we have complete session data
+            await loadCurrentSession()
+          }
+          // When a session is updated to open
+          else if (payload.eventType === 'UPDATE' && payload.new?.status === 'open') {
+            // Reload to ensure we have complete session data
+            await loadCurrentSession()
+          }
+          // When a session is closed or deleted, reload to get current open session
+          else if (
+            (payload.eventType === 'UPDATE' && payload.new?.status === 'closed') ||
+            payload.eventType === 'DELETE'
+          ) {
+            // Reload to get the current open session (if any)
+            // This ensures we only track one session at a time
+            await loadCurrentSession()
+          }
+        }
+      )
+      .subscribe()
+
+    // Listen for service worker messages about synced sales
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data && event.data.type === 'sales-synced') {
+          console.log('Received sales-synced message from service worker')
+          // Refresh order history when sales are synced
+          loadOrderHistory()
+          // Recheck queued sales count after sync
+          checkQueuedSalesStatus()
+        }
+      }
+      navigator.serviceWorker.addEventListener('message', handleMessage)
+      
+      // Listen for online event to manually trigger sync
+      const handleOnline = async () => {
+        console.log('Browser back online, checking for queued sales...')
+        // Wait a moment for service worker to process
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        // Check if service worker can trigger sync
+        const registration = await navigator.serviceWorker.getRegistration()
+        if (registration && 'sync' in registration) {
+          try {
+            // Manually register sync to trigger queued requests
+            await registration.sync.register('pos-sales-queue')
+            console.log('Manually triggered sync for pos-sales-queue')
+          } catch (error) {
+            console.log('Could not manually trigger sync (may already be queued):', error)
+          }
+        }
+        
+        // Check queued sales status
+        checkQueuedSalesStatus()
+        // Refresh order history
+        loadOrderHistory()
+      }
+      
+      window.addEventListener('online', handleOnline)
+      
+      // Periodically check for queued sales (every 30 seconds)
+      const queuedSalesInterval = setInterval(() => {
+        checkQueuedSalesStatus()
+      }, 30000)
+      
+      return () => {
+        channel.unsubscribe()
+        navigator.serviceWorker.removeEventListener('message', handleMessage)
+        window.removeEventListener('online', handleOnline)
+        clearInterval(queuedSalesInterval)
+      }
+    }
+
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === 'history') {
+      // Always refresh history when switching to history tab
+      loadOrderHistory()
+    }
+  }, [activeTab])
 
   function addToCart(product: Product) {
     setCart((prev) => {
@@ -172,6 +304,12 @@ export default function PosPage() {
       return { success: false, error: 'Session not open or cart is empty' }
     }
 
+    // GCash requires online connection
+    if (paymentMethod === 'gcash' && typeof navigator !== 'undefined' && !navigator.onLine) {
+      alert('GCash payments require an internet connection')
+      return { success: false, error: 'GCash requires internet connection' }
+    }
+
     setIsProcessing(true)
     try {
       const items = cart.map((item) => ({
@@ -180,18 +318,145 @@ export default function PosPage() {
         unit_price: item.product.price,
       }))
 
-      const result = await finalizeSale(
-        session.id,
+      const payload = {
+        sessionId: session.id,
         items,
         paymentMethod,
-        paymentMethod === 'gcash' ? gcashData : undefined
-      )
+        gcashData: paymentMethod === 'gcash' && gcashData ? {
+          referenceCode: gcashData.referenceCode,
+          transactionTimestamp: gcashData.transactionTimestamp.toISOString(),
+          imageUrl: gcashData.imageUrl,
+        } : undefined,
+      }
+
+      // Use fetch instead of direct server action call
+      // Service Worker will intercept and queue if offline
+      const isOffline = typeof navigator !== 'undefined' && !navigator.onLine
+      console.log('Sending sale request to /api/pos/finalize', {
+        online: !isOffline,
+        paymentMethod,
+        itemsCount: items.length,
+        payload
+      })
+      
+      // Check if service worker is controlling the page
+      let serviceWorkerReady = false
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration()
+        if (registration?.active) {
+          serviceWorkerReady = true
+          console.log('✅ Service Worker is active and ready')
+        } else {
+          console.warn('⚠️ Service Worker not active - Background Sync may not work')
+        }
+      }
+
+      let response: Response
+      try {
+        // Add timeout to ensure fetch fails quickly when offline
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+        
+        response = await fetch('/api/pos/finalize', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+          cache: 'no-store',
+          signal: controller.signal,
+        })
+        
+        clearTimeout(timeoutId)
+      } catch (error: any) {
+        // Network error - fetch failed completely
+        console.error('Fetch error:', error)
+        
+        // Check if it's an abort (timeout) or network error
+        const isNetworkError = error.name === 'TypeError' || error.name === 'AbortError' || error.message?.includes('Failed to fetch')
+        
+        if ((isOffline || isNetworkError) && (paymentMethod === 'cash' || paymentMethod === 'card')) {
+          console.log('Offline/Network error - storing sale in localStorage fallback')
+          
+          // Store in localStorage as fallback (always works, even if SW fails)
+          try {
+            const saleId = storeOfflineSale({
+              sessionId: session.id,
+              paymentMethod,
+              items: cart.map((item) => ({
+                product_id: item.product.id,
+                quantity: item.quantity,
+                unit_price: item.product.price,
+              })),
+            })
+            console.log('✅ Stored offline sale in localStorage:', saleId)
+          } catch (storageError) {
+            console.error('Error storing offline sale:', storageError)
+            alert('Error storing offline sale. Please try again.')
+            return { success: false, error: 'Failed to store offline sale' }
+          }
+          
+          // Also try to queue via service worker if available
+          if (serviceWorkerReady) {
+            console.log('✅ Service Worker is ready - request should also be queued by Workbox Background Sync')
+          } else {
+            console.warn('⚠️ Service Worker not ready - using localStorage fallback only')
+          }
+          
+          alert('Sale queued. Will sync when back online.')
+          setCart([])
+          setPaymentMethod('cash')
+          
+          // Check queued sales immediately
+          checkQueuedSalesStatus()
+          setShowQueuedSalesModal(true) // Show queued sales modal
+          return { success: true }
+        }
+        throw error
+      }
+
+      // Check if request failed with error status
+      if (!response.ok) {
+        // If offline and we got an error response, store in localStorage
+        if (isOffline && (paymentMethod === 'cash' || paymentMethod === 'card')) {
+          console.log('Request failed with status:', response.status, '- offline, storing in localStorage')
+          
+          // Store in localStorage as fallback
+          try {
+            const saleId = storeOfflineSale({
+              sessionId: session.id,
+              paymentMethod,
+              items: cart.map((item) => ({
+                product_id: item.product.id,
+                quantity: item.quantity,
+                unit_price: item.product.price,
+              })),
+            })
+            console.log('✅ Stored offline sale in localStorage:', saleId)
+          } catch (storageError) {
+            console.error('Error storing offline sale:', storageError)
+          }
+          
+          alert('Sale queued. Will sync when back online.')
+          setCart([])
+          setPaymentMethod('cash')
+          checkQueuedSalesStatus()
+          setShowQueuedSalesModal(true)
+          return { success: true }
+        }
+        
+        // If online but got error, try to parse error message
+        const result = await response.json().catch(() => ({ error: 'Unknown error' }))
+        return { success: false, error: result.error || `Request failed with status ${response.status}` }
+      }
+
+      const result = await response.json()
+      console.log('Sale response:', result)
 
       if (result.success) {
         setCart([])
         setPaymentMethod('cash') // Reset to default
         setShowGCashModal(false)
-        alert('Sale completed successfully!')
         await loadCurrentSession()
         // Always refresh history so it's up-to-date when user switches to history tab
         // Add delay to ensure database transaction has committed
@@ -199,12 +464,65 @@ export default function PosPage() {
         await loadOrderHistory()
         return { success: true }
       } else {
-        alert(`Error: ${result.error}`)
+        // If offline and cash/card, store in localStorage
+        if (typeof navigator !== 'undefined' && !navigator.onLine && (paymentMethod === 'cash' || paymentMethod === 'card')) {
+          console.log('Response error while offline - storing in localStorage')
+          
+          try {
+            const saleId = storeOfflineSale({
+              sessionId: session.id,
+              paymentMethod,
+              items: cart.map((item) => ({
+                product_id: item.product.id,
+                quantity: item.quantity,
+                unit_price: item.product.price,
+              })),
+            })
+            console.log('✅ Stored offline sale in localStorage:', saleId)
+          } catch (storageError) {
+            console.error('Error storing offline sale:', storageError)
+          }
+          
+          alert('Sale queued. Will sync when back online.')
+          setCart([])
+          setPaymentMethod('cash')
+          checkQueuedSalesStatus()
+          setShowQueuedSalesModal(true)
+          return { success: true }
+        }
         return { success: false, error: result.error || 'Unknown error' }
       }
     } catch (error) {
+      console.error('Error finalizing sale:', error)
+      // Network error - likely offline
+      if (typeof navigator !== 'undefined' && !navigator.onLine && (paymentMethod === 'cash' || paymentMethod === 'card')) {
+        console.log('Network error while offline - storing in localStorage')
+        
+        try {
+          const saleId = storeOfflineSale({
+            sessionId: session.id,
+            paymentMethod,
+            items: cart.map((item) => ({
+              product_id: item.product.id,
+              quantity: item.quantity,
+              unit_price: item.product.price,
+            })),
+          })
+          console.log('✅ Stored offline sale in localStorage:', saleId)
+        } catch (storageError) {
+          console.error('Error storing offline sale:', storageError)
+          alert('Error storing offline sale. Please try again.')
+          return { success: false, error: 'Failed to store offline sale' }
+        }
+        
+        alert('Sale queued. Will sync when back online.')
+        setCart([])
+        setPaymentMethod('cash')
+        checkQueuedSalesStatus()
+        setShowQueuedSalesModal(true)
+        return { success: true }
+      }
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      alert(`Error: ${errorMessage}`)
       return { success: false, error: errorMessage }
     } finally {
       setIsProcessing(false)
@@ -292,6 +610,10 @@ export default function PosPage() {
                   <span className="material-symbols-outlined">search</span>
                 </div>
                 <input
+                  id="pos-search"
+                  name="pos-search"
+                  type="search"
+                  suppressHydrationWarning
                   className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 focus:outline-0 focus:ring-0 border-none bg-input-gray focus:border-none h-full placeholder:text-gray-500 px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
                   placeholder="Find a product..."
                   value={searchQuery}
@@ -369,16 +691,20 @@ export default function PosPage() {
         {/* Cart Sidebar */}
         <div className="lg:col-span-1 bg-white border border-gray-200 rounded-xl p-0 flex flex-col">
           {/* Session Banner */}
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-4 border-b border-gray-200 space-y-2">
             <button
-              onClick={() => setShowSessionModal(true)}
+              onClick={async () => {
+                // Reload session state before opening modal to ensure we have latest data
+                await loadCurrentSession()
+                setShowSessionModal(true)
+              }}
               className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 session?.status === 'open'
                   ? 'bg-green-100 text-green-700 border border-green-300'
                   : 'bg-gray-100 text-gray-600 border border-gray-200'
               }`}
             >
-              {session?.status === 'open' ? (
+              {session && session.status === 'open' ? (
                 <span>
                   Session Open • {format(new Date(session.opened_at), 'h:mm a')}
                 </span>
@@ -386,6 +712,30 @@ export default function PosPage() {
                 'Session Closed'
               )}
             </button>
+            
+            {/* Queued Sales Indicator - Always show */}
+            <button
+              onClick={() => setShowQueuedSalesModal(true)}
+              className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border transition-colors ${
+                queuedSalesCount > 0
+                  ? 'bg-yellow-50 border-yellow-300 hover:bg-yellow-100 hover:border-yellow-400 text-yellow-800'
+                  : 'bg-gray-100 border-gray-300 hover:bg-gray-200 hover:border-gray-400 text-gray-700'
+              }`}
+            >
+              <span className={`material-symbols-outlined text-base ${
+                queuedSalesCount > 0 ? 'text-yellow-600' : 'text-gray-500'
+              }`}>
+                {queuedSalesCount > 0 ? 'sync' : 'check_circle'}
+              </span>
+              <span className={`text-sm font-medium ${
+                queuedSalesCount > 0 ? 'text-yellow-800' : 'text-gray-700'
+              }`}>
+                {queuedSalesCount > 0 
+                  ? `${queuedSalesCount} sale${queuedSalesCount !== 1 ? 's' : ''} queued`
+                  : 'No queued sales'}
+              </span>
+            </button>
+            
           </div>
 
           {/* Tabs */}
@@ -450,8 +800,11 @@ export default function PosPage() {
                           </p>
                         </div>
                         <input
+                          id={`cart-quantity-${item.product.id}`}
+                          name={`cart-quantity-${item.product.id}`}
                           type="number"
                           min="1"
+                          suppressHydrationWarning
                           value={item.quantity}
                           onChange={(e) => {
                             const qty = parseInt(e.target.value) || 1
@@ -629,22 +982,46 @@ export default function PosPage() {
             setShowSessionModal(false)
           }}
           onOpenSession={async () => {
-            const result = await openSession()
-            if (result.success) {
-              // Wait a moment for database to update, then reload session
-              await new Promise((resolve) => setTimeout(resolve, 100))
-              await loadCurrentSession()
+            try {
+              const result = await openSession()
+              // Real-time subscription will automatically update the session state
+              // But we'll reload to ensure we have the latest data
+              if (result.success) {
+                // Wait a moment for database transaction to commit
+                await new Promise((resolve) => setTimeout(resolve, 300))
+                await loadCurrentSession()
+              } else {
+                console.error('Failed to open session:', result.error)
+              }
+              return result
+            } catch (error) {
+              console.error('Exception opening session:', error)
+              return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to open session'
+              }
             }
-            return result
           }}
           onCloseSession={async (sessionId) => {
-            const result = await closeSession(sessionId)
-            if (result.success) {
-              // Wait a moment for database to update, then reload session
-              await new Promise((resolve) => setTimeout(resolve, 100))
-              await loadCurrentSession()
+            try {
+              const result = await closeSession(sessionId)
+              // Real-time subscription will automatically update the session state
+              // But we'll reload to ensure we have the latest data
+              if (result.success) {
+                // Wait a moment for database transaction to commit
+                await new Promise((resolve) => setTimeout(resolve, 300))
+                await loadCurrentSession()
+              } else {
+                console.error('Failed to close session:', result.error)
+              }
+              return result
+            } catch (error) {
+              console.error('Exception closing session:', error)
+              return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to close session'
+              }
             }
-            return result
           }}
         />
       )}
@@ -657,6 +1034,20 @@ export default function PosPage() {
             setPaymentMethod('cash') // Reset to cash if modal is closed
           }}
           onConfirm={handleGCashConfirm}
+        />
+      )}
+
+      {showQueuedSalesModal && (
+        <QueuedSalesModal
+          isOpen={showQueuedSalesModal}
+          onClose={() => {
+            setShowQueuedSalesModal(false)
+            checkQueuedSalesStatus() // Refresh count when closing
+          }}
+          onSyncComplete={() => {
+            checkQueuedSalesStatus() // Refresh count after sync
+            loadOrderHistory() // Refresh order history
+          }}
         />
       )}
 

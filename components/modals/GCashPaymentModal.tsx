@@ -105,7 +105,7 @@ export default function GCashPaymentModal({ totalAmount, onClose, onConfirm }: P
         // Still proceed with verification
       } else {
         // Get signed URL for the image (private access)
-        const { data: urlData } = supabase.storage
+        const { data: urlData } = await supabase.storage
           .from('gcash-transactions')
           .createSignedUrl(fileName, 3600) // 1 hour expiry
 

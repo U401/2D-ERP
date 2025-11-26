@@ -55,8 +55,8 @@ export default function EditIngredientModal({ ingredient, onClose }: Props) {
       const result = await updateIngredient(ingredient.id, {
         name: formData.name,
         unit: formData.unit,
-        category: formData.category || null,
-        supplier_id: formData.supplier_id || null,
+        category: formData.category || undefined,
+        supplier_id: formData.supplier_id || undefined,
         cost: typeof formData.cost === 'string' ? 0 : formData.cost,
         low_stock_threshold: typeof formData.low_stock_threshold === 'string' ? 0 : formData.low_stock_threshold,
       })
@@ -98,9 +98,10 @@ export default function EditIngredientModal({ ingredient, onClose }: Props) {
                 Ingredient Name
               </label>
               <input
+                id="ingredient-name"
+                name="ingredient-name"
                 required
                 className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden text-gray-900 focus:outline-0 focus:ring-0 border-gray-300 bg-input-gray h-10 placeholder:text-gray-500 px-3 text-sm font-normal leading-normal rounded-lg focus:ring-2 focus:ring-black"
-                id="ingredient-name"
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -139,9 +140,9 @@ export default function EditIngredientModal({ ingredient, onClose }: Props) {
               <select
                 className="form-select flex w-full min-w-0 flex-1 resize-none overflow-hidden text-gray-900 focus:outline-0 focus:ring-0 border-gray-300 bg-input-gray h-10 px-3 text-sm font-normal leading-normal rounded-lg focus:ring-2 focus:ring-black"
                 id="supplier"
-                value={formData.supplier_id}
+                value={formData.supplier_id || ''}
                 onChange={(e) =>
-                  setFormData({ ...formData, supplier_id: e.target.value || null })
+                  setFormData({ ...formData, supplier_id: e.target.value || '' })
                 }
               >
                 <option value="">No supplier</option>
@@ -165,6 +166,7 @@ export default function EditIngredientModal({ ingredient, onClose }: Props) {
                   required
                   className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden text-gray-900 focus:outline-0 focus:ring-0 border-gray-300 bg-input-gray h-10 placeholder:text-gray-500 px-3 text-sm font-normal leading-normal rounded-lg focus:ring-2 focus:ring-black"
                   id="unit"
+                  name="unit"
                   type="text"
                   value={formData.unit}
                   onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
@@ -178,12 +180,13 @@ export default function EditIngredientModal({ ingredient, onClose }: Props) {
                   Cost per Unit
                 </label>
                 <input
+                  id="cost"
+                  name="cost"
                   required
                   type="number"
                   min="0"
                   step="0.01"
                   className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden text-gray-900 focus:outline-0 focus:ring-0 border-gray-300 bg-input-gray h-10 placeholder:text-gray-500 px-3 text-sm font-normal leading-normal rounded-lg focus:ring-2 focus:ring-black"
-                  id="cost"
                   value={formData.cost === '' ? '' : formData.cost}
                   onChange={(e) =>
                     setFormData({ 
