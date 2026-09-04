@@ -8,16 +8,18 @@ type DateRange = 'today' | 'last7days' | 'last30days' | 'custom'
 
 type Props = {
   dateRange?: DateRange
+  /** Admin-only: force usage to a specific store (requires ingredient_usage_for_store RPC). */
+  storeId?: string
 }
 
-export default function IngredientUsageTable({ dateRange = 'last30days' }: Props) {
+export default function IngredientUsageTable({ dateRange = 'last30days', storeId }: Props) {
   const [usageData, setUsageData] = useState<any[]>([])
   const [ingredients, setIngredients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadIngredientUsage()
-  }, [dateRange])
+  }, [dateRange, storeId])
 
   async function loadIngredientUsage() {
     setLoading(true)
@@ -40,11 +42,17 @@ export default function IngredientUsageTable({ dateRange = 'last30days' }: Props
         startDate = startOfDay(subDays(new Date(), 30))
     }
 
-    // Get ingredient usage via RPC
-    const { data: usage, error } = await supabase.rpc('ingredient_usage', {
-      p_from: startDate.toISOString(),
-      p_to: endDate.toISOString(),
-    })
+    // Get ingredient usage via RPC (store-aware for admin per-store reports)
+    const { data: usage, error } = storeId
+      ? await supabase.rpc('ingredient_usage_for_store', {
+          p_store_id: storeId,
+          p_from: startDate.toISOString(),
+          p_to: endDate.toISOString(),
+        })
+      : await supabase.rpc('ingredient_usage', {
+          p_from: startDate.toISOString(),
+          p_to: endDate.toISOString(),
+        })
 
     if (error) {
       console.error('Error loading ingredient usage:', error)
@@ -53,10 +61,10 @@ export default function IngredientUsageTable({ dateRange = 'last30days' }: Props
     }
 
     // Get all ingredients for display
-    const { data: allIngredients } = await supabase
-      .from('ingredients')
-      .select('*')
-      .order('name')
+    const ingredientsQuery = supabase.from('ingredients').select('*').order('name')
+    const { data: allIngredients } = storeId
+      ? await ingredientsQuery.eq('store_id', storeId)
+      : await ingredientsQuery
 
     // Merge usage data with ingredients
     const usageMap = new Map(

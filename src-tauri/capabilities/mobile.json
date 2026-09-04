@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "mobile",
+  "description": "enables mobile permissions including notifications",
+  "platforms": ["android", "iOS"],
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "notification:default",
+    "notification:allow-notify",
+    "notification:allow-request-permission",
+    "notification:allow-is-permission-granted"
+  ]
+}

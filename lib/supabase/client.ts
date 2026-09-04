@@ -1,6 +1,7 @@
 'use client'
 
 import { createClient as createSupabaseClient, SupabaseClient } from '@supabase/supabase-js'
+import { getInstanceId } from '@/lib/utils/instance-id'
 
 // Use a global variable to ensure singleton across hot reloads
 declare global {
@@ -8,6 +9,19 @@ declare global {
 }
 
 let supabaseClient: SupabaseClient | null = null
+
+function getPerWindowStorageKey() {
+  if (typeof window === 'undefined') return 'coffee-shop-erp-auth:server'
+
+  // Use a static key if running in Tauri (Android/PC app) so the session persists across app restarts.
+  // @ts-ignore
+  if (window.__TAURI_INTERNALS__ || window.__TAURI__) {
+    return 'coffee-shop-erp-auth-token'
+  }
+
+  // Keep the per-window key for normal web browsers so multiple tabs don't share auth state.
+  return `coffee-shop-erp-auth:${getInstanceId()}`
+}
 
 export function createClient() {
   // Check global first (survives hot reloads)
@@ -30,13 +44,13 @@ export function createClient() {
   }
 
   // Create and cache the client instance
-  // Use a unique storage key to avoid conflicts
+  // Use a per-window storage key so multiple instances don't share auth state.
   supabaseClient = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      storageKey: 'coffee-shop-erp-auth',
+      storageKey: getPerWindowStorageKey(),
     },
   })
 

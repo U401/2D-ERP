@@ -1,10 +1,4 @@
-'use server'
-
-import { createServerClient } from '@/lib/supabase/server'
-
 export async function runGCashMigrations() {
-  const supabase = createServerClient()
-
   try {
     // Read the migration SQL file content
     // Since we can't read files directly in server actions, we'll embed the SQL

@@ -1,9 +1,7 @@
-'use server'
-
-import { createServerClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 
 export async function createProductImagesBucket() {
-  const supabase = createServerClient()
+  const supabase = createClient()
 
   // Check if bucket exists
   const { data: buckets, error: listError } = await supabase.storage.listBuckets()
@@ -54,7 +52,7 @@ export async function createProductImagesBucket() {
 }
 
 export async function createGCashTransactionsBucket() {
-  const supabase = createServerClient()
+  const supabase = createClient()
 
   // Check if bucket exists
   const { data: buckets, error: listError } = await supabase.storage.listBuckets()

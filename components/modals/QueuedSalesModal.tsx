@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react'
 import { checkQueuedSales, type QueuedSale } from '@/lib/utils/queued-sales'
 import { getOfflineSales, removeOfflineSale } from '@/lib/utils/offline-sales-storage'
+import { finalizeSale } from '@/app/actions/sales'
 import { format } from 'date-fns'
+import { formatDisplayId } from '@/lib/utils/display-id'
 
 type Props = {
   isOpen: boolean
@@ -47,31 +49,26 @@ export default function QueuedSalesModal({ isOpen, onClose, onSyncComplete }: Pr
       // Try to sync each localStorage sale
       for (const sale of localSales) {
         try {
-          const response = await fetch('/api/pos/finalize', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              sessionId: sale.sessionId,
-              items: sale.items,
-              paymentMethod: sale.paymentMethod,
-            }),
-          })
-          
-          if (response.ok) {
-            const result = await response.json()
-            if (result.success) {
-              removeOfflineSale(sale.id)
-              syncedCount++
-              console.log('✅ Synced offline sale:', sale.id)
-            } else {
-              failedCount++
-              console.error('Failed to sync sale:', sale.id, result.error)
-            }
+          const method = sale.paymentMethod as 'cash' | 'card' | 'gcash' | undefined
+          if (!method || !['cash', 'card', 'gcash'].includes(method)) {
+            failedCount++
+            console.error('Invalid payment method on offline sale:', sale.id, sale.paymentMethod)
+            continue
+          }
+
+          const result = await finalizeSale(
+            sale.sessionId,
+            sale.items,
+            method
+          )
+
+          if (result.success) {
+            removeOfflineSale(sale.id)
+            syncedCount++
+            console.log('✅ Synced offline sale:', sale.id)
           } else {
             failedCount++
-            console.error('Failed to sync sale:', sale.id, response.status)
+            console.error('Failed to sync sale:', sale.id, result.error)
           }
         } catch (error) {
           failedCount++
@@ -83,7 +80,12 @@ export default function QueuedSalesModal({ isOpen, onClose, onSyncComplete }: Pr
       const registration = await navigator.serviceWorker.getRegistration()
       if (registration && 'sync' in registration) {
         try {
-          await registration.sync.register('pos-sales-queue')
+          // TS lib.dom typings don't always include Background Sync properly;
+          // feature-detect and safely narrow/cast before calling.
+          const sync = (registration as unknown as { sync?: { register: (tag: string) => Promise<void> } }).sync
+          if (sync?.register) {
+            await sync.register('pos-sales-queue')
+          }
           console.log('Background Sync triggered')
         } catch (error: any) {
           if (error.name !== 'InvalidStateError') {
@@ -117,7 +119,7 @@ export default function QueuedSalesModal({ isOpen, onClose, onSyncComplete }: Pr
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl w-full max-w-2xl border border-gray-200 shadow-lg flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-xl w-full max-w-2xl border border-gray-200 shadow-lg flex flex-col max-h-[calc(100dvh-2rem)]">
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900">Queued Sales</h2>
           <div className="flex items-center gap-3">
@@ -194,7 +196,7 @@ export default function QueuedSalesModal({ isOpen, onClose, onSyncComplete }: Pr
                   <div className="space-y-2">
                     <div className="text-xs text-gray-600">
                       <span className="font-medium">Session:</span>{' '}
-                      {sale.sessionId.slice(0, 8)}...
+                      {formatDisplayId(sale.sessionId, 'SES')}
                     </div>
                     <div className="text-xs text-gray-600">
                       <span className="font-medium">Items:</span> {sale.items.length}
@@ -207,10 +209,10 @@ export default function QueuedSalesModal({ isOpen, onClose, onSyncComplete }: Pr
                             className="text-xs text-gray-600 flex justify-between"
                           >
                             <span>
-                              {item.quantity}x Product ({item.product_id.slice(0, 8)}...)
+                              {item.quantity}x Product ({formatDisplayId(item.product_id, 'PRD')})
                             </span>
                             <span className="font-medium">
-                              ${(item.unit_price * item.quantity).toFixed(2)}
+                              ₱{(item.unit_price * item.quantity).toFixed(2)}
                             </span>
                           </div>
                         ))}
@@ -230,15 +232,15 @@ export default function QueuedSalesModal({ isOpen, onClose, onSyncComplete }: Pr
                           <>
                             <div className="flex justify-between text-xs text-gray-600">
                               <span>Subtotal:</span>
-                              <span>${subtotal.toFixed(2)}</span>
+                              <span>₱{subtotal.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-xs text-gray-600">
                               <span>Tax (8%):</span>
-                              <span>${tax.toFixed(2)}</span>
+                              <span>₱{tax.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-sm font-semibold text-gray-900 pt-1 border-t border-gray-200">
                               <span>Total:</span>
-                              <span>${total.toFixed(2)}</span>
+                              <span>₱{total.toFixed(2)}</span>
                             </div>
                           </>
                         )

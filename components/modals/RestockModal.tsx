@@ -27,7 +27,7 @@ export default function RestockModal({ ingredient, onClose }: Props) {
       const result = await restockIngredient({
         ingredient_id: ingredient.id,
         quantity: parseFloat(quantity),
-        cost: parseFloat(cost),
+        total_cost: parseFloat(cost),
       })
 
       if (result.success) {
@@ -65,9 +65,9 @@ export default function RestockModal({ ingredient, onClose }: Props) {
                 id="restock-quantity"
                 name="restock-quantity"
                 required
-                type="number"
-                min="0.01"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
+                pattern="[0-9]*\.?[0-9]*"
                 className="form-input w-full rounded-lg text-gray-900 bg-input-gray border border-gray-300 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 h-12 px-4 placeholder:text-gray-500 text-base font-normal"
                 placeholder="0.00"
                 value={quantity}
@@ -81,9 +81,9 @@ export default function RestockModal({ ingredient, onClose }: Props) {
                 id="restock-cost"
                 name="restock-cost"
                 required
-                type="number"
-                min="0"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
+                pattern="[0-9]*\.?[0-9]*"
                 className="form-input w-full rounded-lg text-gray-900 bg-input-gray border border-gray-300 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 h-12 px-4 placeholder:text-gray-500 text-base font-normal"
                 placeholder="0.00"
                 value={cost}

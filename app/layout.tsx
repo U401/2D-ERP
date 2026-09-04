@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 import { Work_Sans } from 'next/font/google'
 import './globals.css'
+import { AuthProvider } from '@/components/AuthProvider'
+import { UserMonitoring } from '@/components/UserMonitoring'
+import { AppLifecycle } from '@/components/AppLifecycle'
 
 const workSans = Work_Sans({
   subsets: ['latin'],
@@ -11,6 +14,12 @@ const workSans = Work_Sans({
 export const metadata: Metadata = {
   title: 'Coffee Shop ERP',
   description: 'Point of Sale, Inventory Management, and Reports',
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
@@ -35,13 +44,21 @@ export default function RootLayout({
       <body
         className={`${workSans.variable} font-display bg-background-light text-slate-900`}
       >
-        {children}
+        <AuthProvider>
+          <UserMonitoring>
+            <AppLifecycle />
+            {children}
+          </UserMonitoring>
+        </AuthProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-                  // Unregister any existing service workers first to avoid conflicts
+                  // NOTE: This app is packaged as a Tauri desktop app with a static export.
+                  // Next.js API routes do not run in that environment, so we keep service
+                  // workers disabled to avoid offline queueing pointing at non-existent /api/* routes.
+                  // Unregister any existing service workers to avoid stale caching/blank screens.
                   navigator.serviceWorker.getRegistrations().then(function(registrations) {
                     for (var i = 0; i < registrations.length; i++) {
                       registrations[i].unregister().then(function() {
@@ -49,27 +66,6 @@ export default function RootLayout({
                       });
                     }
                   });
-                  
-                  // Small delay before registering to ensure unregistration completes
-                  setTimeout(function() {
-                    window.addEventListener('load', function() {
-                      navigator.serviceWorker
-                        .register('/sw.js')
-                        .then(function(registration) {
-                          console.log('Service Worker registered successfully:', registration.scope);
-                          setInterval(function() {
-                            registration.update();
-                          }, 60 * 60 * 1000);
-                        })
-                        .catch(function(error) {
-                          console.error('Service Worker registration failed:', error);
-                        });
-                      navigator.serviceWorker.addEventListener('controllerchange', function() {
-                        console.log('Service Worker controller changed, reloading page...');
-                        window.location.reload();
-                      });
-                    });
-                  }, 100);
                 }
               })();
             `,

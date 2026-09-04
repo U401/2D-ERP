@@ -8,50 +8,38 @@ export default function RunMigrationsPage() {
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
 
   // The SQL content
-  const sqlContent = `-- Combined GCash Migration Script
--- Run this entire script in Supabase SQL Editor to set up GCash transaction detection
+  const sqlContent = `-- Combined GCash and Sale Improvements Script
+-- Run this entire script in Supabase SQL Editor to fix the POS sale issue
 
--- ============================================
--- Migration 0009: Add GCash transaction fields
--- ============================================
-ALTER TABLE sales 
-  ADD COLUMN IF NOT EXISTS gcash_reference_code TEXT,
-  ADD COLUMN IF NOT EXISTS gcash_transaction_timestamp_utc TIMESTAMPTZ,
-  ADD COLUMN IF NOT EXISTS gcash_image_url TEXT,
-  ADD COLUMN IF NOT EXISTS gcash_verified_at_utc TIMESTAMPTZ,
-  ADD COLUMN IF NOT EXISTS gcash_verification_status TEXT CHECK (gcash_verification_status IN ('confirmed', 'rejected', NULL)),
-  ADD COLUMN IF NOT EXISTS gcash_rejection_reason TEXT CHECK (gcash_rejection_reason IN ('ocr_failed', 'not_gcash', 'missing_datetime', 'missing_reference', 'too_old', 'duplicate_reference', NULL));
+-- 1. Add client_side_id to sales table
+ALTER TABLE public.sales
+  ADD COLUMN IF NOT EXISTS client_side_id TEXT;
 
--- Update payment_method constraint to include 'gcash'
-ALTER TABLE sales 
-  DROP CONSTRAINT IF EXISTS sales_payment_method_check;
-  
-ALTER TABLE sales 
-  ADD CONSTRAINT sales_payment_method_check 
-  CHECK (payment_method IN ('cash', 'card', 'gcash'));
+-- Create a unique index on (store_id, client_side_id) to prevent duplicate sales
+CREATE UNIQUE INDEX IF NOT EXISTS idx_sales_store_client_side_id ON public.sales(store_id, client_side_id) WHERE client_side_id IS NOT NULL;
 
--- Create index for GCash reference codes (for duplicate detection)
-CREATE INDEX IF NOT EXISTS idx_sales_gcash_reference_code ON sales(gcash_reference_code) 
-  WHERE gcash_reference_code IS NOT NULL;
+-- 2. Update finalize_sale RPC
+-- First, drop ALL existing versions to avoid ambiguity errors
+DROP FUNCTION IF EXISTS public.finalize_sale(UUID, JSONB);
+DROP FUNCTION IF EXISTS public.finalize_sale(UUID, JSONB, TEXT);
+DROP FUNCTION IF EXISTS public.finalize_sale(UUID, JSONB, TEXT, TEXT, TIMESTAMPTZ, TEXT);
+DROP FUNCTION IF EXISTS public.finalize_sale(UUID, JSONB, TEXT, TEXT, TIMESTAMPTZ, TEXT, TEXT);
+DROP FUNCTION IF EXISTS public.finalize_sale(UUID, JSONB, TEXT, TEXT, TIMESTAMPTZ, TEXT, UUID, TEXT);
 
--- Create index for GCash verification status
-CREATE INDEX IF NOT EXISTS idx_sales_gcash_verification_status ON sales(gcash_verification_status) 
-  WHERE gcash_verification_status IS NOT NULL;
-
--- ============================================
--- Migration 0010: Update finalize_sale function
--- ============================================
-CREATE OR REPLACE FUNCTION finalize_sale(
+CREATE OR REPLACE FUNCTION public.finalize_sale(
   p_session_id UUID,
   p_items JSONB,
   p_payment_method TEXT DEFAULT 'cash',
   p_gcash_reference_code TEXT DEFAULT NULL,
   p_gcash_transaction_timestamp_utc TIMESTAMPTZ DEFAULT NULL,
-  p_gcash_image_url TEXT DEFAULT NULL
+  p_gcash_image_url TEXT DEFAULT NULL,
+  p_customer_id UUID DEFAULT NULL,
+  p_client_side_id TEXT DEFAULT NULL
 )
 RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_sale_id UUID;
@@ -65,13 +53,30 @@ DECLARE
   v_available NUMERIC;
   v_batch_record RECORD;
   v_to_consume NUMERIC;
+  v_store_id UUID;
 BEGIN
-  -- Validate session is open
+  v_store_id := public.current_store_id();
+  IF v_store_id IS NULL THEN
+    RAISE EXCEPTION 'No store assigned to this user. Please re-login.';
+  END IF;
+
+  -- Idempotency check
+  IF p_client_side_id IS NOT NULL THEN
+    SELECT id INTO v_sale_id
+    FROM public.sales
+    WHERE store_id = v_store_id AND client_side_id = p_client_side_id;
+    
+    IF v_sale_id IS NOT NULL THEN
+      RETURN v_sale_id;
+    END IF;
+  END IF;
+
+  -- Validate session
   IF NOT EXISTS (
-    SELECT 1 FROM sessions
-    WHERE id = p_session_id AND status = 'open'
+    SELECT 1 FROM public.sessions
+    WHERE id = p_session_id AND status = 'open' AND store_id = v_store_id
   ) THEN
-    RAISE EXCEPTION 'Session is not open or does not exist';
+    RAISE EXCEPTION 'Session is not open, does not exist, or does not belong to this store';
   END IF;
 
   -- Validate payment method
@@ -79,14 +84,22 @@ BEGIN
     RAISE EXCEPTION 'Invalid payment method. Must be cash, card, or gcash';
   END IF;
 
-  -- Validate GCash-specific fields if payment method is GCash
+  -- Validate GCash
   IF p_payment_method = 'gcash' THEN
     IF p_gcash_reference_code IS NULL OR p_gcash_transaction_timestamp_utc IS NULL THEN
       RAISE EXCEPTION 'GCash payment requires reference code and transaction timestamp';
     END IF;
+
+    IF EXISTS (
+      SELECT 1 FROM public.sales
+      WHERE gcash_reference_code = p_gcash_reference_code
+        AND gcash_reference_code IS NOT NULL
+    ) THEN
+      RAISE EXCEPTION 'Reference code % has already been used.', p_gcash_reference_code;
+    END IF;
   END IF;
 
-  -- Validate items array is not empty
+  -- Validate items
   IF jsonb_array_length(p_items) = 0 THEN
     RAISE EXCEPTION 'Sale must contain at least one item';
   END IF;
@@ -96,43 +109,49 @@ BEGIN
   LOOP
     v_unit_price := COALESCE((v_item->>'unit_price')::NUMERIC, 0);
     v_quantity := (v_item->>'quantity')::INTEGER;
-    
+
     IF v_unit_price <= 0 THEN
-      -- Fetch product price if not provided
       SELECT price INTO v_unit_price
-      FROM products
-      WHERE id = (v_item->>'product_id')::UUID;
-      
+      FROM public.products
+      WHERE id = (v_item->>'product_id')::UUID
+        AND store_id = v_store_id;
+
       IF v_unit_price IS NULL THEN
-        RAISE EXCEPTION 'Product not found: %', v_item->>'product_id';
+        RAISE EXCEPTION 'Product not found in this store: %', v_item->>'product_id';
       END IF;
     END IF;
-    
+
     v_total_amount := v_total_amount + (v_unit_price * v_quantity);
   END LOOP;
 
-  -- Create sale record with payment method and GCash data
-  INSERT INTO sales (
-    session_id, 
-    total_amount, 
-    sold_at, 
+  -- Create sale record
+  INSERT INTO public.sales (
+    session_id,
+    total_amount,
+    sold_at,
     payment_method,
     gcash_reference_code,
     gcash_transaction_timestamp_utc,
     gcash_image_url,
     gcash_verified_at_utc,
-    gcash_verification_status
+    gcash_verification_status,
+    customer_id,
+    store_id,
+    client_side_id
   )
   VALUES (
-    p_session_id, 
-    v_total_amount, 
-    NOW(), 
+    p_session_id,
+    v_total_amount,
+    NOW(),
     p_payment_method,
     p_gcash_reference_code,
     p_gcash_transaction_timestamp_utc,
     p_gcash_image_url,
     CASE WHEN p_payment_method = 'gcash' THEN NOW() ELSE NULL END,
-    CASE WHEN p_payment_method = 'gcash' THEN 'confirmed' ELSE NULL END
+    CASE WHEN p_payment_method = 'gcash' THEN 'confirmed' ELSE NULL END,
+    p_customer_id,
+    v_store_id,
+    p_client_side_id
   )
   RETURNING id INTO v_sale_id;
 
@@ -143,33 +162,34 @@ BEGIN
     v_quantity := (v_item->>'quantity')::INTEGER;
     v_unit_price := COALESCE((v_item->>'unit_price')::NUMERIC, NULL);
 
-    -- Get product price if not provided
     IF v_unit_price IS NULL THEN
       SELECT price INTO v_unit_price
-      FROM products
-      WHERE id = v_product_id;
+      FROM public.products
+      WHERE id = v_product_id AND store_id = v_store_id;
     END IF;
 
-    -- Insert sale item
-    INSERT INTO sale_items (sale_id, product_id, quantity, price)
-    VALUES (v_sale_id, v_product_id, v_quantity, v_unit_price);
+    INSERT INTO public.sale_items (sale_id, product_id, quantity, price, store_id)
+    VALUES (v_sale_id, v_product_id, v_quantity, v_unit_price, v_store_id);
 
-    -- Process recipes and deduct inventory (FIFO)
     FOR v_recipe_record IN
       SELECT ingredient_id, quantity as required_quantity
-      FROM recipes
-      WHERE product_id = v_product_id
+      FROM public.recipes
+      WHERE product_id = v_product_id AND store_id = v_store_id
     LOOP
-      -- Calculate total needed for this ingredient
       v_needed := v_recipe_record.required_quantity * v_quantity;
 
-      -- Consume from batches (FIFO - oldest first)
+      PERFORM 1 FROM public.ingredients 
+      WHERE id = v_recipe_record.ingredient_id AND store_id = v_store_id
+      FOR UPDATE;
+
       FOR v_batch_record IN
         SELECT id, quantity, ingredient_id
-        FROM inventory_batches
+        FROM public.inventory_batches
         WHERE ingredient_id = v_recipe_record.ingredient_id
+          AND store_id = v_store_id
           AND quantity > 0
         ORDER BY received_at ASC
+        FOR UPDATE
       LOOP
         IF v_needed <= 0 THEN
           EXIT;
@@ -178,55 +198,27 @@ BEGIN
         v_available := v_batch_record.quantity;
         v_to_consume := LEAST(v_needed, v_available);
 
-        -- Update batch
-        UPDATE inventory_batches
+        UPDATE public.inventory_batches
         SET quantity = quantity - v_to_consume
-        WHERE id = v_batch_record.id;
+        WHERE id = v_batch_record.id AND store_id = v_store_id;
 
-        -- Update ingredient current_stock
-        UPDATE ingredients
+        UPDATE public.ingredients
         SET current_stock = current_stock - v_to_consume
-        WHERE id = v_recipe_record.ingredient_id;
+        WHERE id = v_recipe_record.ingredient_id AND store_id = v_store_id;
 
         v_needed := v_needed - v_to_consume;
       END LOOP;
 
-      -- Check if we have enough stock
       IF v_needed > 0 THEN
-        RAISE EXCEPTION 'Insufficient stock for ingredient % (needed: %, available: %)',
-          (SELECT name FROM ingredients WHERE id = v_recipe_record.ingredient_id),
-          v_needed + (v_recipe_record.required_quantity * v_quantity - v_needed),
-          (SELECT current_stock FROM ingredients WHERE id = v_recipe_record.ingredient_id);
+        RAISE EXCEPTION 'Insufficient stock for ingredient %',
+          (SELECT name FROM public.ingredients WHERE id = v_recipe_record.ingredient_id AND store_id = v_store_id);
       END IF;
     END LOOP;
   END LOOP;
 
   RETURN v_sale_id;
 END;
-$$;
-
--- ============================================
--- Migration 0011: Storage bucket policies
--- ============================================
-CREATE POLICY IF NOT EXISTS "Allow uploads to gcash-transactions"
-ON storage.objects
-FOR INSERT
-WITH CHECK (bucket_id = 'gcash-transactions');
-
-CREATE POLICY IF NOT EXISTS "Allow reads from gcash-transactions"
-ON storage.objects
-FOR SELECT
-USING (bucket_id = 'gcash-transactions');
-
-CREATE POLICY IF NOT EXISTS "Allow updates to gcash-transactions"
-ON storage.objects
-FOR UPDATE
-USING (bucket_id = 'gcash-transactions');
-
-CREATE POLICY IF NOT EXISTS "Allow deletes from gcash-transactions"
-ON storage.objects
-FOR DELETE
-USING (bucket_id = 'gcash-transactions');`
+$$;`
 
   function handleCopy() {
     navigator.clipboard.writeText(sqlContent)
@@ -239,12 +231,11 @@ USING (bucket_id = 'gcash-transactions');`
     setResult(null)
 
     try {
-      const response = await fetch('/api/migrations/run-direct', {
-        method: 'POST',
+      setResult({
+        success: false,
+        message:
+          'Direct execution is not available in the desktop (static) build. Please use Method 2: Manual Execution via Supabase SQL Editor.',
       })
-
-      const data = await response.json()
-      setResult(data)
     } catch (error) {
       setResult({
         success: false,
@@ -256,7 +247,7 @@ USING (bucket_id = 'gcash-transactions');`
   }
 
   return (
-    <div className="flex-1 p-8">
+    <div className="flex-1 min-h-0 min-w-0 p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-black dark:text-white mb-4">
           Run GCash Database Migrations

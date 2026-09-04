@@ -1,7 +1,4 @@
-'use server'
-
-import { createServerClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
+import { createClient } from '@/lib/supabase/client'
 import { z } from 'zod'
 import type { GCashVerificationResult } from '@/lib/types/gcash'
 
@@ -19,87 +16,119 @@ export async function finalizeSale(
     referenceCode: string
     transactionTimestamp: Date
     imageUrl: string | null
-  }
+  },
+  customerId?: string | null,
+  clientSideId?: string | null
 ) {
-  const supabase = createServerClient()
+  try {
+    const supabase = createClient()
 
-  // Validate items
-  const validatedItems = items.map((item) => SaleItemSchema.parse(item))
-
-  // STRICT: Check for duplicate GCash reference code BEFORE creating the sale
-  // Reject ANY duplicate immediately, regardless of timestamp, status, or any other condition
-  if (paymentMethod === 'gcash' && gcashData) {
-    const { data: existingSales, error: duplicateCheckError } = await supabase
-      .from('sales')
-      .select('id, gcash_reference_code, gcash_transaction_timestamp_utc, gcash_verification_status, sold_at')
-      .eq('gcash_reference_code', gcashData.referenceCode)
-      .not('gcash_reference_code', 'is', null) // Only check sales that have a reference code
-
-    if (duplicateCheckError) {
-      console.error('Error checking duplicate reference code:', duplicateCheckError)
-      return { success: false, error: 'Failed to verify reference code. Please try again.', saleId: null }
+    // Get current user to determine store_id
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      console.error('Auth error in finalizeSale:', authError)
+      return { success: false, error: 'User not authenticated. Please re-login.', saleId: null }
     }
 
-    // STRICT: Reject ANY duplicate reference code immediately
-    if (existingSales && existingSales.length > 0) {
-      const duplicateSale = existingSales[0]
-      
-      // Log for debugging
-      // Ensure transactionTimestamp is a Date object for logging
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('store_id')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError || !profile?.store_id) {
+      console.error('Profile error in finalizeSale:', profileError)
+      return { success: false, error: 'Store ID not found. Please contact support.', saleId: null }
+    }
+
+    // Validate items
+    let validatedItems
+    try {
+      validatedItems = items.map((item) => SaleItemSchema.parse(item))
+    } catch (zodError: any) {
+      console.error('Validation error in finalizeSale:', zodError)
+      return { success: false, error: 'Invalid items in cart', saleId: null }
+    }
+
+    // STRICT: Check for duplicate GCash reference code BEFORE creating the sale
+    if (paymentMethod === 'gcash' && gcashData) {
+      const { data: existingSales, error: duplicateCheckError } = await supabase
+        .from('sales')
+        .select('id, gcash_reference_code, gcash_transaction_timestamp_utc, gcash_verification_status, sold_at')
+        .eq('gcash_reference_code', gcashData.referenceCode)
+        .not('gcash_reference_code', 'is', null)
+
+      if (duplicateCheckError) {
+        console.error('Error checking duplicate reference code:', duplicateCheckError)
+        return { success: false, error: 'Failed to verify reference code. Please try again.', saleId: null }
+      }
+
+      if (existingSales && existingSales.length > 0) {
+        return {
+          success: false,
+          error: `Reference code ${gcashData.referenceCode.substring(0, 4)}... has already been used.`,
+          saleId: null,
+        }
+      }
+    }
+
+    // Prepare RPC parameters
+    const rpcParams: any = {
+      p_session_id: sessionId,
+      p_items: validatedItems,
+      p_payment_method: paymentMethod,
+      p_gcash_reference_code: null,
+      p_gcash_transaction_timestamp_utc: null,
+      p_gcash_image_url: null,
+      p_customer_id: (customerId && customerId !== '') ? customerId : null,
+      p_client_side_id: clientSideId || null,
+    }
+
+    if (paymentMethod === 'gcash' && gcashData) {
       const timestamp = gcashData.transactionTimestamp instanceof Date
         ? gcashData.transactionTimestamp
         : new Date(gcashData.transactionTimestamp)
       
-      console.log('STRICT DUPLICATE REJECTION in finalizeSale - Reference code already exists:', {
-        referenceCode: gcashData.referenceCode,
-        existingSaleId: duplicateSale.id,
-        existingStatus: duplicateSale.gcash_verification_status,
-        existingTimestamp: duplicateSale.gcash_transaction_timestamp_utc,
-        existingSoldAt: duplicateSale.sold_at,
-        newTimestamp: timestamp.toISOString(),
-      })
-
-      return {
-        success: false,
-        error: `Reference code ${gcashData.referenceCode.substring(0, 4)}...${gcashData.referenceCode.substring(gcashData.referenceCode.length - 2)} has already been used. Each GCash transaction can only be used once.`,
-        saleId: null,
-      }
+      rpcParams.p_gcash_reference_code = gcashData.referenceCode
+      rpcParams.p_gcash_transaction_timestamp_utc = timestamp.toISOString()
+      rpcParams.p_gcash_image_url = gcashData.imageUrl
     }
+
+    console.log('Calling finalize_sale RPC with:', { ...rpcParams, p_items: 'REDACTED' })
+    const { data, error } = await supabase.rpc('finalize_sale', rpcParams)
+
+    // In rare cases (network hiccups/dev mode), Postgrest can surface a non-null
+    // empty-ish error object even when the RPC actually committed and returned data.
+    // Treat returned sale ID as source of truth to avoid false failure overlays.
+    if (error && !data) {
+      console.warn('RPC Error in finalize_sale:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      })
+      
+      let niceError = error.message || 'Database error occurred'
+      
+      // Clean up PostgreSQL RAISE EXCEPTION messages (e.g. "P0001: Insufficient stock")
+      if (niceError.startsWith('P0001:')) {
+        niceError = niceError.replace(/^P0001:\s*/, '')
+      }
+      // Check if it's an HTTP error string wrapped in a JSON (rare but happens)
+      if (niceError.includes('{"message":')) {
+        try {
+          const parsed = JSON.parse(niceError)
+          if (parsed.message) niceError = parsed.message
+        } catch (e) {}
+      }
+
+      return { success: false, error: niceError, saleId: null }
+    }
+
+    return { success: true, error: null, saleId: data }
+  } catch (err: any) {
+    console.warn('Unexpected error in finalizeSale server action:', err)
+    return { success: false, error: err.message || 'An unexpected error occurred', saleId: null }
   }
-
-  // Prepare RPC parameters - always include all parameters to avoid ambiguity
-  // The function signature is: finalize_sale(p_session_id, p_items, p_payment_method, p_gcash_reference_code, p_gcash_transaction_timestamp_utc, p_gcash_image_url)
-  const rpcParams: any = {
-    p_session_id: sessionId,
-    p_items: validatedItems,
-    p_payment_method: paymentMethod,
-    p_gcash_reference_code: null,
-    p_gcash_transaction_timestamp_utc: null,
-    p_gcash_image_url: null,
-  }
-
-  // Add GCash-specific parameters if payment method is GCash
-  if (paymentMethod === 'gcash' && gcashData) {
-    // Ensure transactionTimestamp is a Date object (handle string serialization)
-    const timestamp = gcashData.transactionTimestamp instanceof Date
-      ? gcashData.transactionTimestamp
-      : new Date(gcashData.transactionTimestamp)
-    
-    rpcParams.p_gcash_reference_code = gcashData.referenceCode
-    rpcParams.p_gcash_transaction_timestamp_utc = timestamp.toISOString()
-    rpcParams.p_gcash_image_url = gcashData.imageUrl
-  }
-
-  const { data, error } = await supabase.rpc('finalize_sale', rpcParams)
-
-  if (error) {
-    return { success: false, error: error.message, saleId: null }
-  }
-
-  revalidatePath('/pos')
-  revalidatePath('/reports')
-  revalidatePath('/inventory')
-  
-  return { success: true, error: null, saleId: data }
 }
 

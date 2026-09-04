@@ -2,7 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
+html,
+body {
+  height: 100%;
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+}
+
+@layer base {
+  /* Ensure all buttons keep their content centered (text/icons) as they resize. */
+  button {
+    /* Intentionally do NOT force text alignment; some composite buttons (cards/lists) need text-left. */
+    @apply inline-flex items-center justify-center;
+  }
+
+  /* Some interactive elements are styled as buttons. */
+  [role='button'] {
+    @apply inline-flex items-center justify-center;
+  }
+}
+
+/* CEO-friendly larger icon sizes */
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
+/* Larger icons for better readability - base size 28px instead of 24px */
+.material-symbols-outlined.icon-lg {
+  font-size: 28px;
+}/* Extra large icons for key actions - 32px */
+.material-symbols-outlined.icon-xl {
+  font-size: 32px;
+}

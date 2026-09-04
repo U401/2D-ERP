@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { format } from 'date-fns'
+import { formatDisplayId } from '@/lib/utils/display-id'
 
 type Session = {
   id: string
@@ -123,6 +124,11 @@ export default function SessionManagementModal({
               ? `Last closed: ${format(new Date(session.closed_at), 'MMM d, h:mm a')}`
               : 'No active session'}
           </p>
+          {isOpen && session?.id && (
+            <p className="mt-1 text-xs text-[#888888] font-mono">
+              {formatDisplayId(session.id, 'SES')}
+            </p>
+          )}
         </div>
 
         <div className="mt-8 flex flex-col gap-4">

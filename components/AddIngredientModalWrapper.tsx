@@ -9,7 +9,7 @@ export default function AddIngredientModalWrapper() {
   return (
     <AddIngredientModal
       onClose={() => {
-        router.push('/inventory')
+        router.push('/inventory/')
       }}
     />
   )

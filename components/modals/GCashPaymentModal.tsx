@@ -2,7 +2,14 @@
 
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { GCashVerificationResult } from '@/lib/types/gcash'
+import {
+  extractReferenceCode,
+  extractTransactionTimestamp,
+  isGCashLike,
+  isTransactionRecent,
+  type GCashVerificationResult,
+  type GCashRejectionReason,
+} from '@/lib/types/gcash'
 
 type Props = {
   totalAmount: number
@@ -112,16 +119,119 @@ export default function GCashPaymentModal({ totalAmount, onClose, onConfirm }: P
         imageUrl = urlData?.signedUrl || null
       }
 
-      // Call verification API
-      const formData = new FormData()
-      formData.append('image', selectedImage)
-
-      const response = await fetch('/api/gcash/verify', {
-        method: 'POST',
-        body: formData,
+      // Client-side OCR + verification (Tauri static builds can't run Next.js API routes)
+      const { recognize } = await import('tesseract.js')
+      const ocr = await recognize(selectedImage, 'eng', {
+        logger: (m: any) => {
+          if (m?.status === 'recognizing text') {
+            setVerificationMessage(`Reading text... ${Math.round((m.progress || 0) * 100)}%`)
+          }
+        },
       })
 
-      const result: GCashVerificationResult = await response.json()
+      const ocrText = ocr?.data?.text || ''
+      const ocrConfidence =
+        typeof ocr?.data?.confidence === 'number' ? ocr.data.confidence / 100 : 0.8
+
+      const reject = (reason: GCashRejectionReason, error: string): GCashVerificationResult => ({
+        success: false,
+        status: 'rejected',
+        rejectionReason: reason,
+        error,
+        debug: {
+          ocrTextPreview: ocrText.substring(0, 200),
+        },
+      })
+
+      if (!isGCashLike(ocrText)) {
+        const result = reject('not_gcash', 'Image does not appear to be a GCash transaction')
+        setVerificationResult(result)
+        setVerificationStatus('rejected')
+        setVerificationMessage(result.error || 'Transaction rejected')
+        return
+      }
+
+      const referenceCode = extractReferenceCode(ocrText)
+      if (!referenceCode) {
+        const result = reject('missing_reference', 'Could not extract reference code from transaction')
+        setVerificationResult(result)
+        setVerificationStatus('rejected')
+        setVerificationMessage(result.error || 'Transaction rejected')
+        return
+      }
+
+      const transactionTimestamp = extractTransactionTimestamp(ocrText)
+      if (!transactionTimestamp) {
+        const result = reject(
+          'missing_datetime',
+          'Could not extract transaction date/time. Please ensure the image shows a clear date and time.'
+        )
+        setVerificationResult(result)
+        setVerificationStatus('rejected')
+        setVerificationMessage(result.error || 'Transaction rejected')
+        return
+      }
+
+      if (!isTransactionRecent(transactionTimestamp, new Date())) {
+        const result: GCashVerificationResult = {
+          success: false,
+          status: 'rejected',
+          rejectionReason: 'too_old',
+          error: 'Transaction is older than 10 minutes',
+          transactionData: {
+            referenceCode,
+            transactionTimestamp,
+            extractedConfidence: ocrConfidence,
+          },
+          debug: {
+            ocrTextPreview: ocrText.substring(0, 200),
+          },
+        }
+        setVerificationResult(result)
+        setVerificationStatus('rejected')
+        setVerificationMessage(result.error || 'Transaction rejected')
+        return
+      }
+
+      // Duplicate check (client-side)
+      const { data: existing, error: checkError } = await supabase
+        .from('sales')
+        .select('id')
+        .eq('gcash_reference_code', referenceCode)
+        .not('gcash_reference_code', 'is', null)
+        .limit(1)
+
+      if (checkError) {
+        const result = reject('ocr_failed', 'Failed to verify reference code. Please try again.')
+        setVerificationResult(result)
+        setVerificationStatus('rejected')
+        setVerificationMessage(result.error || 'Transaction rejected')
+        return
+      }
+
+      if (existing && existing.length > 0) {
+        const result = reject(
+          'duplicate_reference',
+          'Reference code has already been used. Each GCash transaction can only be used once.'
+        )
+        setVerificationResult(result)
+        setVerificationStatus('rejected')
+        setVerificationMessage(result.error || 'Transaction rejected')
+        return
+      }
+
+      const result: GCashVerificationResult = {
+        success: true,
+        status: 'confirmed',
+        transactionData: {
+          referenceCode,
+          transactionTimestamp,
+          extractedConfidence: ocrConfidence,
+        },
+        debug: {
+          ocrTextPreview: ocrText.substring(0, 200),
+        },
+      }
 
       setVerificationResult(result)
 
@@ -175,7 +285,7 @@ export default function GCashPaymentModal({ totalAmount, onClose, onConfirm }: P
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-[#0a0a0a] rounded-xl w-full max-w-md border border-gray-800 m-4 flex flex-col max-h-[90vh]">
+      <div className="bg-[#0a0a0a] rounded-xl w-full max-w-md border border-gray-800 m-4 flex flex-col max-h-[calc(100dvh-2rem)]">
         <div className="p-6 border-b border-gray-800 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-white">GCash Payment</h2>
           <button
@@ -190,7 +300,7 @@ export default function GCashPaymentModal({ totalAmount, onClose, onConfirm }: P
           {/* Amount Display */}
           <div className="text-center pb-4 border-b border-gray-800">
             <p className="text-gray-400 text-sm">Total Amount</p>
-            <p className="text-white text-2xl font-bold">${totalAmount.toFixed(2)}</p>
+            <p className="text-white text-2xl font-bold">₱{totalAmount.toFixed(2)}</p>
           </div>
 
           {/* Image Preview */}

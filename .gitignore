@@ -35,3 +35,15 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+
+/installers/
+/logs/
+/dist/
+/supabase/backup/
+/supabase/.temp/
+/src-tauri/gen/
+/src-tauri/target/
+*.idsig
+*.keystore
+webauthn_files.json
+

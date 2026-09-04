@@ -9,3 +9,17 @@ DROP FUNCTION IF EXISTS finalize_sale(UUID, JSONB, TEXT);
 -- is already in place and will remain as the single version
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+

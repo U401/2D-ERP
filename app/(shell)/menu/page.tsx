@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { addProduct, updateProduct, deleteProduct } from '@/app/actions/products'
+import { useAutoRefresh } from '@/hooks/useAutoRefresh'
+import { addProduct, updateProduct, deleteProduct, addProductForStore, updateProductForStore, deleteProductForStore } from '@/app/actions/products'
 import { getProductRecipes, syncProductRecipes } from '@/app/actions/recipes'
 import { getAllCategories, renameCategory, deleteCategory } from '@/app/actions/categories'
 
@@ -30,6 +31,8 @@ type RecipeItem = {
 
 export default function MenuPage() {
   const [products, setProducts] = useState<Product[]>([])
+  const [stores, setStores] = useState<{ id: string; name: string }[]>([])
+  const [selectedStoreId, setSelectedStoreId] = useState<string>('')
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -50,10 +53,43 @@ export default function MenuPage() {
   const [isProcessing, setIsProcessing] = useState(false)
 
   useEffect(() => {
-    loadProducts()
-    loadIngredients()
-    loadCategories()
+    initPage()
   }, [])
+
+  const refreshData = useCallback(() => {
+    if (selectedStoreId) {
+      loadProducts(selectedStoreId)
+      loadIngredients(selectedStoreId)
+      loadCategories()
+    }
+  }, [selectedStoreId])
+
+  useEffect(() => {
+    if (selectedStoreId) {
+      refreshData()
+      setEditingProduct(null)
+    }
+  }, [selectedStoreId, refreshData])
+
+  useAutoRefresh(refreshData, 10000)
+
+  async function initPage() {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    if (profile?.role !== 'admin') {
+      window.location.href = '/pos/'
+      return
+    }
+
+    const { data: storesData } = await supabase.from('stores').select('id, name').order('name')
+    if (storesData && storesData.length > 0) {
+      setStores(storesData)
+      setSelectedStoreId(storesData[0].id)
+    }
+  }
 
   useEffect(() => {
     if (editingProduct) {
@@ -79,20 +115,28 @@ export default function MenuPage() {
     }
   }, [editingProduct])
 
-  async function loadProducts() {
+  async function loadProducts(storeId: string) {
     const supabase = createClient()
-    const { data } = await supabase.from('products').select('*').order('name')
+    const { data } = await supabase
+      .from('products')
+      .select('*')
+      .eq('store_id', storeId)
+      .order('name')
     if (data) setProducts(data)
   }
 
-  async function loadIngredients() {
+  async function loadIngredients(storeId: string) {
     const supabase = createClient()
-    const { data } = await supabase.from('ingredients').select('id, name, unit').order('name')
+    const { data } = await supabase
+      .from('ingredients')
+      .select('id, name, unit')
+      .eq('store_id', storeId)
+      .order('name')
     if (data) setIngredients(data)
   }
 
   async function loadCategories() {
-    const result = await getAllCategories()
+    const result = await getAllCategories(selectedStoreId)
     if (result.success) {
       setCategories(result.categories)
     }
@@ -178,7 +222,7 @@ export default function MenuPage() {
       let productId: string
       if (editingProduct && editingProduct.id) {
         // Editing existing product
-        const result = await updateProduct(editingProduct.id, productData)
+        const result = await updateProductForStore(editingProduct.id, selectedStoreId, productData)
         if (!result.success) {
           alert(`Error: ${result.error}`)
           setIsProcessing(false)
@@ -187,7 +231,7 @@ export default function MenuPage() {
         productId = editingProduct.id
       } else {
         // Adding new product
-        const result = await addProduct(productData)
+        const result = await addProductForStore(selectedStoreId, productData)
         if (!result.success) {
           alert(`Error: ${result.error}`)
           setIsProcessing(false)
@@ -216,7 +260,7 @@ export default function MenuPage() {
       setSelectedImage(null)
       setImagePreview(null)
       setRecipeItems([])
-      await loadProducts()
+      await loadProducts(selectedStoreId)
       await loadCategories()
       alert('Product saved successfully!')
     } catch (error) {
@@ -229,9 +273,9 @@ export default function MenuPage() {
   async function handleDelete(productId: string) {
     if (!confirm('Are you sure you want to delete this product?')) return
 
-    const result = await deleteProduct(productId)
+    const result = await deleteProductForStore(productId, selectedStoreId)
     if (result.success) {
-      await loadProducts()
+      await loadProducts(selectedStoreId)
       await loadCategories()
       if (editingProduct?.id === productId) {
         setEditingProduct(null)
@@ -265,9 +309,9 @@ export default function MenuPage() {
       return
     }
 
-    const result = await renameCategory(oldName, editingCategoryName.trim())
+    const result = await renameCategory(oldName, editingCategoryName.trim(), selectedStoreId)
     if (result.success) {
-      await loadProducts()
+      await loadProducts(selectedStoreId)
       await loadCategories()
       setEditingCategory(null)
       setEditingCategoryName('')
@@ -279,7 +323,7 @@ export default function MenuPage() {
   async function handleDeleteCategory(categoryName: string) {
     if (!confirm(`Are you sure you want to delete the category "${categoryName}"?`)) return
 
-    const result = await deleteCategory(categoryName)
+    const result = await deleteCategory(categoryName, selectedStoreId)
     if (result.success) {
       await loadCategories()
     } else {
@@ -381,13 +425,24 @@ export default function MenuPage() {
   )
 
   return (
-    <div className="flex h-full min-h-screen">
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+    <div className="flex flex-1 min-h-0 min-w-0">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-8 p-8">
         {/* Products Table */}
-        <div className="lg:col-span-2 flex flex-col gap-6 h-full">
-          <div className="flex flex-col gap-4">
-            <div className="px-4 py-3 flex items-center justify-between gap-4">
-              <h2 className="text-xl font-bold text-gray-900">Manage Products</h2>
+        <div className="lg:col-span-2 flex flex-col gap-8 h-full">
+          <div className="flex flex-col gap-6">
+            <div className="px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
+              <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto gap-4">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Manage Products</h2>
+                {stores.length > 0 && (
+                  <select
+                    className="form-select rounded-lg bg-gray-100 border-gray-200 text-gray-900 focus:ring-gray-900 font-medium cursor-pointer text-sm sm:text-base py-2 pl-3 pr-8"
+                    value={selectedStoreId}
+                    onChange={(e) => setSelectedStoreId(e.target.value)}
+                  >
+                    {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                )}
+              </div>
               <button
                 onClick={() => {
                   setEditingProduct({ id: '', name: '', price: 0, category: null } as Product)
@@ -395,26 +450,26 @@ export default function MenuPage() {
                   setFormData({ name: '', category: '', price: '', image_url: '' })
                   setRecipeItems([])
                 }}
-                className="flex items-center justify-center gap-2 h-12 px-4 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                className="flex items-center justify-center gap-2 sm:gap-3 h-12 sm:h-14 w-full sm:w-auto px-4 sm:px-5 bg-gray-900 text-white sm:bg-white sm:text-black sm:border sm:border-gray-200 rounded-lg hover:bg-gray-800 sm:hover:bg-gray-200 transition-colors flex-shrink-0"
               >
-                <span className="material-symbols-outlined">add</span>
-                <span className="text-sm font-medium">Add New Product</span>
+                <span className="material-symbols-outlined icon-lg">add</span>
+                <span className="text-sm sm:text-base font-medium">Add New Product</span>
               </button>
             </div>
 
             <div className="flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden flex-grow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <label className="flex flex-col h-10 w-full max-w-sm">
+              <div className="px-4 sm:px-8 py-4 sm:py-5 border-b border-gray-200">
+                <label className="flex flex-col h-12 w-full max-w-sm">
                   <div className="flex w-full flex-1 items-stretch rounded-lg h-full">
-                    <div className="text-gray-400 flex border-none bg-input-gray items-center justify-center pl-4 rounded-l-lg border-r-0">
-                      <span className="material-symbols-outlined">search</span>
+                    <div className="text-gray-400 flex border-none bg-input-gray items-center justify-center pl-4 sm:pl-5 rounded-l-lg border-r-0">
+                      <span className="material-symbols-outlined text-lg sm:text-2xl">search</span>
                     </div>
                     <input
                       id="menu-search"
                       name="menu-search"
                       type="search"
                       suppressHydrationWarning
-                      className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 focus:outline-0 focus:ring-0 border-none bg-input-gray focus:border-none h-full placeholder:text-gray-500 px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
+                      className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 focus:outline-0 focus:ring-0 border-none bg-input-gray focus:border-none h-full placeholder:text-gray-500 px-4 sm:px-5 rounded-l-none border-l-0 pl-2 sm:pl-3 text-base sm:text-lg font-normal leading-relaxed"
                       placeholder="Find a product..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
@@ -423,51 +478,63 @@ export default function MenuPage() {
                 </label>
               </div>
 
-              <div className="flex-grow overflow-y-auto">
-                <table className="w-full text-left">
+              <div className="flex-grow overflow-x-auto overflow-y-auto">
+                <table className="w-full text-left min-w-[600px]">
                   <thead className="sticky top-0 bg-white z-10">
                     <tr className="border-b border-gray-200">
-                      <th className="px-6 py-3 text-xs font-medium uppercase text-gray-600">
+                      <th className="px-4 sm:px-8 py-3 sm:py-5 text-xs sm:text-sm font-semibold uppercase text-gray-600">
                         Product
                       </th>
-                      <th className="px-6 py-3 text-xs font-medium uppercase text-gray-400">
+                      <th className="px-4 sm:px-8 py-3 sm:py-5 text-xs sm:text-sm font-semibold uppercase text-gray-400">
                         Category
                       </th>
-                      <th className="px-6 py-3 text-xs font-medium uppercase text-gray-400">
+                      <th className="px-4 sm:px-8 py-3 sm:py-5 text-xs sm:text-sm font-semibold uppercase text-gray-400">
                         Price
                       </th>
-                      <th className="px-6 py-3 text-xs font-medium uppercase text-gray-400 text-right">
+                      <th className="px-4 sm:px-8 py-3 sm:py-5 text-xs sm:text-sm font-semibold uppercase text-gray-400 text-right">
                         Actions
                       </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {filteredProducts.map((product) => (
-                      <tr key={product.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-gradient-to-br from-amber-800 to-amber-600 rounded-md flex-shrink-0"></div>
-                            <p className="text-gray-900 text-sm font-medium">{product.name}</p>
-                          </div>
+                      <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 sm:px-8 py-3 sm:py-5 whitespace-nowrap">
+                            <div className="flex items-center gap-5">
+                              {product.image_url ? (
+                                <img
+                                  src={product.image_url}
+                                  alt={product.name}
+                                  className="w-12 h-12 rounded-md object-cover flex-shrink-0"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement
+                                    target.style.display = 'none'
+                                    target.nextElementSibling?.classList.remove('hidden')
+                                  }}
+                                />
+                              ) : null}
+                              <div className={`w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-amber-800 to-amber-600 rounded-lg sm:rounded-xl flex-shrink-0 ${product.image_url ? 'hidden' : ''}`}></div>
+                              <p className="text-gray-900 text-base sm:text-xl font-semibold">{product.name}</p>
+                            </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        <td className="px-4 sm:px-8 py-3 sm:py-5 whitespace-nowrap text-sm sm:text-lg font-medium text-gray-500">
                           {product.category || '-'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                          ${product.price.toFixed(2)}
+                        <td className="px-4 sm:px-8 py-3 sm:py-5 whitespace-nowrap text-right text-base sm:text-2xl font-black text-gray-900">
+                          ₱{product.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <td className="px-4 sm:px-8 py-3 sm:py-5 whitespace-nowrap text-right">
                           <button
                             onClick={() => handleEdit(product)}
-                            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                            className="p-2 sm:p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-md transition-colors"
                           >
-                            <span className="material-symbols-outlined !text-xl">edit</span>
+                            <span className="material-symbols-outlined text-base sm:text-xl">edit</span>
                           </button>
                           <button
                             onClick={() => handleDelete(product.id)}
-                            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                            className="p-2 sm:p-2.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                           >
-                            <span className="material-symbols-outlined !text-xl">delete</span>
+                            <span className="material-symbols-outlined text-base sm:text-xl">delete</span>
                           </button>
                         </td>
                       </tr>
@@ -480,21 +547,21 @@ export default function MenuPage() {
         </div>
 
         {/* Sidebar - Category Management or Product Form */}
-        <div className="lg:col-span-1 bg-white border border-gray-200 rounded-xl p-6 flex flex-col h-fit">
+        <div className="lg:col-span-1 bg-white border border-gray-200 rounded-xl p-8 flex flex-col h-fit">
           {editingProduct && editingProduct.id ? (
             <>
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Edit Product</h3>
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">Edit Product</h3>
+              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                 <div>
                   <label
-                    className="text-gray-600 text-sm font-medium mb-2 block"
+                    className="text-gray-600 text-base font-semibold mb-3 block"
                     htmlFor="product-name"
                   >
                     Product Name
                   </label>
                   <input
                     required
-                    className="form-input w-full rounded-lg text-gray-900 bg-input-gray border-gray-300 focus:border-gray-900 focus:ring-gray-900"
+                    className="form-input w-full rounded-lg text-gray-900 bg-input-gray border-gray-300 focus:border-gray-900 focus:ring-gray-900 h-12 text-base"
                     id="product-name"
                     type="text"
                     value={formData.name}
@@ -504,13 +571,13 @@ export default function MenuPage() {
 
                 <div>
                   <label
-                    className="text-gray-600 text-sm font-medium mb-2 block"
+                    className="text-gray-600 text-base font-semibold mb-3 block"
                     htmlFor="product-category"
                   >
                     Category
                   </label>
                   <select
-                    className="form-select w-full rounded-lg text-gray-900 bg-white border-gray-300 focus:border-gray-900 focus:ring-gray-900"
+                    className="form-select w-full rounded-lg text-gray-900 bg-white border-gray-300 focus:border-gray-900 focus:ring-gray-900 h-12 text-base"
                     id="product-category"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -526,13 +593,13 @@ export default function MenuPage() {
 
                 <div>
                   <label
-                    className="text-gray-600 text-sm font-medium mb-2 block"
+                    className="text-gray-600 text-base font-semibold mb-3 block"
                     htmlFor="product-price"
                   >
                     Price
                   </label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-600">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-600 text-base">
                       $
                     </span>
                     <input
@@ -540,7 +607,7 @@ export default function MenuPage() {
                       type="number"
                       min="0"
                       step="0.01"
-                      className="form-input w-full rounded-lg text-gray-900 bg-gray-300 border-gray-400 focus:border-gray-900 focus:ring-gray-900 pl-7"
+                      className="form-input w-full rounded-lg text-gray-900 bg-gray-300 border-gray-400 focus:border-gray-900 focus:ring-gray-900 pl-9 h-12 text-base"
                       id="product-price"
                       value={formData.price}
                       onChange={(e) => setFormData({ ...formData, price: e.target.value })}
@@ -549,11 +616,11 @@ export default function MenuPage() {
                 </div>
 
                 <div>
-                  <label className="text-gray-400 text-sm font-medium mb-2 block">
+                  <label className="text-gray-400 text-base font-semibold mb-3 block">
                     Product Image
                   </label>
                   <div className="flex items-center justify-center w-full">
-                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                    <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
                       {imagePreview ? (
                         <div className="relative w-full h-full">
                           <img
@@ -574,20 +641,20 @@ export default function MenuPage() {
                                 setImagePreview(null)
                               }
                             }}
-                            className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 z-10"
+                            className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 z-10"
                           >
-                            <span className="material-symbols-outlined text-sm">close</span>
+                            <span className="material-symbols-outlined text-base">close</span>
                           </button>
                         </div>
                       ) : (
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          <span className="material-symbols-outlined text-gray-500 mb-2">
+                          <span className="material-symbols-outlined text-gray-500 mb-3 icon-lg">
                             upload_file
                           </span>
-                          <p className="mb-2 text-sm text-gray-400">
+                          <p className="mb-3 text-base text-gray-400">
                             <span className="font-semibold">Click to upload</span> or drag and drop
                           </p>
-                          <p className="text-xs text-gray-500">SVG, PNG, JPG (MAX. 5MB)</p>
+                          <p className="text-sm text-gray-500">SVG, PNG, JPG (MAX. 5MB)</p>
                         </div>
                       )}
                       <input
@@ -601,16 +668,16 @@ export default function MenuPage() {
                 </div>
 
                 {/* Recipe Ingredients Section */}
-                <div className="border-t border-gray-200 my-2"></div>
+                <div className="border-t border-gray-200 my-3"></div>
                 <div>
-                  <h4 className="text-gray-300 text-sm font-semibold mb-3">Recipe Ingredients</h4>
-                  <div className="space-y-3">
+                  <h4 className="text-gray-300 text-base font-semibold mb-4">Recipe Ingredients</h4>
+                  <div className="space-y-4">
                     {recipeItems.map((item, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <p className="text-sm text-gray-900 flex-1">{item.ingredient_name}</p>
-                        <div className="flex items-center gap-2">
+                      <div key={index} className="flex items-center gap-3">
+                        <p className="text-base text-gray-900 flex-1">{item.ingredient_name}</p>
+                        <div className="flex items-center gap-3">
                           <input
-                            className="form-input w-20 rounded-lg text-gray-900 text-sm bg-gray-300 border-gray-400 focus:border-gray-900 focus:ring-gray-900 text-center"
+                            className="form-input w-24 rounded-lg text-gray-900 text-base bg-gray-300 border-gray-400 focus:border-gray-900 focus:ring-gray-900 text-center"
                             type="number"
                             min="0"
                             step="0.01"
@@ -619,21 +686,21 @@ export default function MenuPage() {
                               handleUpdateQuantity(index, e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)
                             }
                           />
-                          <span className="text-sm text-gray-400">{item.unit}</span>
+                          <span className="text-base text-gray-400">{item.unit}</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleRemoveIngredient(index)}
-                          className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                          className="p-2.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
                         >
-                          <span className="material-symbols-outlined !text-xl">delete</span>
+                          <span className="material-symbols-outlined icon-lg">delete</span>
                         </button>
                       </div>
                     ))}
                   </div>
-                  <div className="flex gap-2 mt-4">
+                  <div className="flex gap-3 mt-5">
                     <select
-                      className="form-select w-full rounded-lg text-gray-900 bg-white border-gray-300 focus:border-gray-900 focus:ring-gray-900"
+                      className="form-select w-full rounded-lg text-gray-900 bg-white border-gray-300 focus:border-gray-900 focus:ring-gray-900 h-12 text-base"
                       value={selectedIngredient}
                       onChange={(e) => setSelectedIngredient(e.target.value)}
                     >
@@ -654,26 +721,48 @@ export default function MenuPage() {
                       type="button"
                       onClick={handleAddIngredient}
                       disabled={!selectedIngredient}
-                      className="flex items-center justify-center gap-2 h-10 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center justify-center gap-3 h-12 px-5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <span className="material-symbols-outlined">add</span>
-                      <span className="text-sm font-medium">Add</span>
+                      <span className="material-symbols-outlined icon-lg">add</span>
+                      <span className="text-base font-medium">Add</span>
                     </button>
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 mt-4">
+                <div className="flex justify-end gap-4 mt-5">
                   <button
                     type="button"
                     onClick={handleCancel}
-                    className="h-10 px-4 rounded-lg bg-button-gray text-gray-900 text-sm font-medium hover:bg-[#D0D0D0] transition-colors border border-gray-200"
+                    className="h-12 px-5 rounded-lg bg-button-gray text-gray-900 text-base font-medium hover:bg-[#D0D0D0] transition-colors border border-gray-200"
                   >
                     Cancel
                   </button>
+                  {editingProduct.id && (
+                    <button
+                      type="button"
+                      disabled={isProcessing}
+                      onClick={async () => {
+                        if (confirm('Are you sure you want to delete this product?')) {
+                          setIsProcessing(true)
+                          const res = await deleteProductForStore(editingProduct.id, selectedStoreId)
+                          if (res.success) {
+                            setEditingProduct(null)
+                            loadProducts(selectedStoreId)
+                          } else {
+                            alert(res.error)
+                          }
+                          setIsProcessing(false)
+                        }
+                      }}
+                      className="h-12 px-5 rounded-lg bg-red-100 text-red-700 text-base font-medium hover:bg-red-200 transition-colors disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  )}
                   <button
                     type="submit"
                     disabled={isProcessing}
-                    className="h-10 px-4 rounded-lg bg-white text-black text-sm font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="h-12 px-5 rounded-lg bg-white text-black text-base font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isProcessing ? 'Saving...' : editingProduct.id ? 'Update Product' : 'Save Product'}
                   </button>
@@ -682,18 +771,18 @@ export default function MenuPage() {
             </>
           ) : editingProduct && !editingProduct.id ? (
             <>
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Add New Product</h3>
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">Add New Product</h3>
+              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                 <div>
                   <label
-                    className="text-gray-600 text-sm font-medium mb-2 block"
+                    className="text-gray-600 text-base font-semibold mb-3 block"
                     htmlFor="product-name-new"
                   >
                     Product Name
                   </label>
                   <input
                     required
-                    className="form-input w-full rounded-lg text-gray-900 bg-input-gray border-gray-300 focus:border-gray-900 focus:ring-gray-900"
+                    className="form-input w-full rounded-lg text-gray-900 bg-input-gray border-gray-300 focus:border-gray-900 focus:ring-gray-900 h-12 text-base"
                     id="product-name-new"
                     type="text"
                     value={formData.name}
@@ -703,13 +792,13 @@ export default function MenuPage() {
 
                 <div>
                   <label
-                    className="text-gray-600 text-sm font-medium mb-2 block"
+                    className="text-gray-600 text-base font-semibold mb-3 block"
                     htmlFor="product-category-new"
                   >
                     Category
                   </label>
                   <select
-                    className="form-select w-full rounded-lg text-gray-900 bg-white border-gray-300 focus:border-gray-900 focus:ring-gray-900"
+                    className="form-select w-full rounded-lg text-gray-900 bg-white border-gray-300 focus:border-gray-900 focus:ring-gray-900 h-12 text-base"
                     id="product-category-new"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -725,13 +814,13 @@ export default function MenuPage() {
 
                 <div>
                   <label
-                    className="text-gray-600 text-sm font-medium mb-2 block"
+                    className="text-gray-600 text-base font-semibold mb-3 block"
                     htmlFor="product-price-new"
                   >
                     Price
                   </label>
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-600">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-600 text-base">
                       $
                     </span>
                     <input
@@ -739,7 +828,7 @@ export default function MenuPage() {
                       type="number"
                       min="0"
                       step="0.01"
-                      className="form-input w-full rounded-lg text-gray-900 bg-gray-300 border-gray-400 focus:border-gray-900 focus:ring-gray-900 pl-7"
+                      className="form-input w-full rounded-lg text-gray-900 bg-gray-300 border-gray-400 focus:border-gray-900 focus:ring-gray-900 pl-9 h-12 text-base"
                       id="product-price-new"
                       value={formData.price}
                       onChange={(e) => setFormData({ ...formData, price: e.target.value })}
@@ -748,11 +837,11 @@ export default function MenuPage() {
                 </div>
 
                 <div>
-                  <label className="text-gray-400 text-sm font-medium mb-2 block">
+                  <label className="text-gray-400 text-base font-semibold mb-3 block">
                     Product Image
                   </label>
                   <div className="flex items-center justify-center w-full">
-                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-700 border-dashed rounded-lg cursor-pointer bg-gray-900 hover:bg-gray-800 relative">
+                    <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-gray-700 border-dashed rounded-lg cursor-pointer bg-gray-900 hover:bg-gray-800 relative">
                       {imagePreview ? (
                         <>
                           <img
@@ -761,7 +850,7 @@ export default function MenuPage() {
                             className="w-full h-full object-cover rounded-lg"
                           />
                           <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
-                            <span className="text-gray-900 text-sm font-medium">Click to change image</span>
+                            <span className="text-gray-900 text-base font-medium">Click to change image</span>
                           </div>
                           <button
                             type="button"
@@ -771,20 +860,20 @@ export default function MenuPage() {
                               setSelectedImage(null)
                               setImagePreview(null)
                             }}
-                            className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700 z-10"
+                            className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 z-10"
                           >
-                            <span className="material-symbols-outlined text-sm">close</span>
+                            <span className="material-symbols-outlined text-base">close</span>
                           </button>
                         </>
                       ) : (
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          <span className="material-symbols-outlined text-gray-500 mb-2">
+                        <div className="flex flex-col items-center justify-center pt-6 pb-8">
+                          <span className="material-symbols-outlined text-gray-500 mb-3 icon-lg">
                             upload_file
                           </span>
-                          <p className="mb-2 text-sm text-gray-400">
+                          <p className="mb-3 text-base text-gray-400">
                             <span className="font-semibold">Click to upload</span> or drag and drop
                           </p>
-                          <p className="text-xs text-gray-500">SVG, PNG, JPG (MAX. 5MB)</p>
+                          <p className="text-sm text-gray-500">SVG, PNG, JPG (MAX. 5MB)</p>
                         </div>
                       )}
                       <input
@@ -880,12 +969,12 @@ export default function MenuPage() {
             </>
           ) : (
             <>
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Manage Categories</h3>
-          <div className="flex flex-col gap-3">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">Manage Categories</h3>
+          <div className="flex flex-col gap-4">
             {categories.map((category) => (
               <div
                 key={category}
-                className="flex items-center justify-between p-3 bg-button-gray rounded-lg border border-gray-200"
+                className="flex items-center justify-between p-4 bg-button-gray rounded-lg border border-gray-200"
               >
                 {editingCategory === category ? (
                   <input
@@ -901,41 +990,41 @@ export default function MenuPage() {
                         setEditingCategoryName('')
                       }
                     }}
-                    className="flex-1 bg-input-gray text-gray-900 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 border border-gray-300"
+                    className="flex-1 bg-input-gray text-gray-900 rounded px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-gray-500 border border-gray-300"
                     autoFocus
                   />
                 ) : (
-                  <p className="text-gray-900 text-sm">{category}</p>
+                  <p className="text-gray-900 text-base">{category}</p>
                 )}
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleEditCategory(category)}
-                    className="p-2 text-gray-600 hover:text-gray-900 hover:bg-[#D0D0D0] rounded-md transition-colors"
+                    className="p-2.5 text-gray-600 hover:text-gray-900 hover:bg-[#D0D0D0] rounded-md transition-colors"
                   >
-                    <span className="material-symbols-outlined !text-xl">edit</span>
+                    <span className="material-symbols-outlined icon-lg">edit</span>
                   </button>
                   <button
                     onClick={() => handleDeleteCategory(category)}
-                    className="p-2 text-gray-600 hover:text-red-600 hover:bg-[#D0D0D0] rounded-md transition-colors"
+                    className="p-2.5 text-gray-600 hover:text-red-600 hover:bg-[#D0D0D0] rounded-md transition-colors"
                   >
-                    <span className="material-symbols-outlined !text-xl">delete</span>
+                    <span className="material-symbols-outlined icon-lg">delete</span>
                   </button>
                 </div>
               </div>
             ))}
           </div>
-          <div className="border-t border-gray-200 my-4"></div>
-          <h4 className="text-base font-semibold text-gray-900 mb-3">Add New Category</h4>
-          <form onSubmit={handleAddCategory} className="flex flex-col gap-4">
+          <div className="border-t border-gray-200 my-6"></div>
+          <h4 className="text-lg font-semibold text-gray-900 mb-4">Add New Category</h4>
+          <form onSubmit={handleAddCategory} className="flex flex-col gap-5">
             <div>
               <label
-                className="text-gray-600 text-sm font-medium mb-2 block"
+                className="text-gray-600 text-base font-semibold mb-3 block"
                 htmlFor="category-name"
               >
                 Category Name
               </label>
               <input
-                className="form-input w-full rounded-lg text-gray-900 bg-input-gray border-gray-300 focus:border-gray-900 focus:ring-gray-900"
+                className="form-input w-full rounded-lg text-gray-900 bg-input-gray border-gray-300 focus:border-gray-900 focus:ring-gray-900 h-12 text-base"
                 id="category-name"
                 placeholder="e.g., Cold Brew"
                 type="text"
@@ -945,7 +1034,7 @@ export default function MenuPage() {
             </div>
             <button
               type="submit"
-              className="h-10 px-4 rounded-lg bg-button-gray text-gray-900 text-sm font-medium hover:bg-[#D0D0D0] transition-colors border border-gray-200"
+              className="h-12 px-5 rounded-lg bg-button-gray text-gray-900 text-base font-medium hover:bg-[#D0D0D0] transition-colors border border-gray-200"
             >
               Add Category
             </button>

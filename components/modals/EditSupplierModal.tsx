@@ -56,7 +56,7 @@ export default function EditSupplierModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-lg bg-white rounded-xl border border-gray-200 shadow-lg flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-lg bg-white rounded-xl border border-gray-200 shadow-lg flex flex-col max-h-[calc(100dvh-2rem)]">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">Edit Supplier</h2>
           <button

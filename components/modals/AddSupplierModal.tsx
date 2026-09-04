@@ -5,9 +5,10 @@ import { addSupplier } from '@/app/actions/suppliers'
 
 type Props = {
   onClose: () => void
+  onSuccess?: () => void
 }
 
-export default function AddSupplierModal({ onClose }: Props) {
+export default function AddSupplierModal({ onClose, onSuccess }: Props) {
   const [formData, setFormData] = useState({
     name: '',
     contact_person: '',
@@ -23,6 +24,7 @@ export default function AddSupplierModal({ onClose }: Props) {
     try {
       const result = await addSupplier(formData)
       if (result.success) {
+        onSuccess?.()
         onClose()
       } else {
         alert(`Error: ${result.error}`)

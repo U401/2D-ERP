@@ -1,0 +1,5 @@
+﻿EmpName,RecordDate,ClockIn,ClockOut,Department
+Don,2026-05-18,08:00,17:00,Barista
+Staff2,2026-05-18,09:15,18:00,Cashier
+Don,2026-05-19,08:05,17:05,Barista
+Staff2,2026-05-19,08:50,18:00,Cashier
