@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   turbopack: {},
-  output: 'standalone',
+  output: 'export',
   webpack: (config, { isServer, webpack }) => {
     // Enable WebAssembly support for Tesseract.js
     config.experiments = {
