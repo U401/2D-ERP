@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  turbopack: {},
+  output: 'standalone',
   webpack: (config, { isServer, webpack }) => {
     // Enable WebAssembly support for Tesseract.js
     config.experiments = {
