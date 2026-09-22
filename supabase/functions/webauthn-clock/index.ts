@@ -63,7 +63,7 @@ serve(async (req) => {
         .from('employee_webauthn_challenges')
         .select('*')
         .eq('user_id', user_id)
-        .order('created_at', { ascending: false })
+        .order('expires_at', { ascending: false })
         .limit(1);
 
       if (!challenges || challenges.length === 0) throw new Error('Challenge not found');
@@ -132,7 +132,7 @@ serve(async (req) => {
         .from('employee_webauthn_challenges')
         .select('*')
         .is('user_id', null)
-        .order('created_at', { ascending: false })
+        .order('expires_at', { ascending: false })
         .limit(1);
       
       const expectedChallenge = challenges[0].challenge;

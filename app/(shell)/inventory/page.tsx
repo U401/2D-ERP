@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback , useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import AddIngredientModal from '@/components/modals/AddIngredientModal'
 import EditIngredientModal from '@/components/modals/EditIngredientModal'
@@ -67,6 +67,13 @@ export default function AdminInventoryPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null)
+  const [storeFilter, setStoreFilter] = useState<string>('all')
+  const [categoryFilter, setCategoryFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const itemsPerPage = 20
+
   const [error, setError] = useState<string | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
   const [userStoreId, setUserStoreId] = useState<string | null>(null)
@@ -296,7 +303,99 @@ export default function AdminInventoryPage() {
   const outOfStockCount = allIngredients.filter(ing => ing.current_stock === 0).length
   const lowStockCount = allIngredients.filter(ing => isLowStock(ing)).length
 
+  const uniqueCategories = useMemo(() => {
+    const cats = new Set(allIngredients.map(ing => ing.category || 'Uncategorized'))
+    return Array.from(cats).sort()
+  }, [allIngredients])
+
+  const uniqueStores = useMemo(() => {
+    const s = new Set(allIngredients.map(ing => ing.store_name).filter(Boolean) as string[])
+    return Array.from(s).sort()
+  }, [allIngredients])
+
+  const processedIngredients = useMemo(() => {
+    let result = [...allIngredients]
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      result = result.filter(ing => 
+        ing.name.toLowerCase().includes(q) || 
+        ing.store_name?.toLowerCase().includes(q) ||
+        (ing.category && ing.category.toLowerCase().includes(q))
+      )
+    }
+
+    if (storeFilter !== 'all') {
+      result = result.filter(ing => ing.store_name === storeFilter)
+    }
+
+    if (categoryFilter !== 'all') {
+      result = result.filter(ing => (ing.category || 'Uncategorized') === categoryFilter)
+    }
+
+    if (statusFilter !== 'all') {
+      if (statusFilter === 'out') {
+        result = result.filter(ing => ing.current_stock === 0)
+      } else if (statusFilter === 'low') {
+        result = result.filter(ing => isLowStock(ing))
+      }
+    }
+
+    if (sortConfig) {
+      result.sort((a, b) => {
+        let aValue = a[sortConfig.key as keyof typeof a]
+        let bValue = b[sortConfig.key as keyof typeof b]
+
+        if (sortConfig.key === 'unit_cost') {
+          aValue = (a.purchase_price || 0) / (a.purchase_yield || 1) as any
+          bValue = (b.purchase_price || 0) / (b.purchase_yield || 1) as any
+        } else if (sortConfig.key === 'category') {
+          aValue = (a.category || 'Uncategorized') as any
+          bValue = (b.category || 'Uncategorized') as any
+        } else if (sortConfig.key === 'name') {
+           aValue = a.name.toLowerCase() as any
+           bValue = b.name.toLowerCase() as any
+        } else if (sortConfig.key === 'store_name') {
+           aValue = (a.store_name || '').toLowerCase() as any
+           bValue = (b.store_name || '').toLowerCase() as any
+        }
+
+        const valA = aValue ?? ''
+        const valB = bValue ?? ''
+        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1
+        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1
+        return 0
+      })
+    }
+
+    return result
+  }, [allIngredients, searchQuery, storeFilter, categoryFilter, statusFilter, sortConfig])
+
+  const totalPages = Math.ceil(processedIngredients.length / itemsPerPage) || 1
+  const paginatedIngredients = processedIngredients.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, storeFilter, categoryFilter, statusFilter, sortConfig])
+
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc'
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc'
+    }
+    setSortConfig({ key, direction })
+  }
+
+  const SortIcon = ({ columnKey }: { columnKey: string }) => {
+    if (sortConfig?.key !== columnKey) return <span className="material-symbols-outlined text-gray-300 text-sm align-middle ml-1">swap_vert</span>
+    return <span className="material-symbols-outlined text-gray-900 text-sm align-middle ml-1">{sortConfig.direction === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span>
+  }
+
   return (
+
     <div className="flex-1 min-h-0 min-w-0 p-4 sm:p-6 lg:p-8 bg-gray-50/50">
       <div className="w-full max-w-7xl mx-auto">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
