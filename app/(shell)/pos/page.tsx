@@ -639,7 +639,7 @@ export default function PosPage() {
         </div>
 
         {/* Cart Sidebar */}
-        <div className="lg:w-[350px] xl:w-[400px] w-full bg-white border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col min-h-0 shrink-0">
+        <div className="lg:w-[350px] xl:w-[400px] w-full bg-white border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col min-h-0 shrink lg:shrink-0">
           {/* Session Banner */}
           <div className="p-4 border-b border-gray-200 space-y-3">
             <button

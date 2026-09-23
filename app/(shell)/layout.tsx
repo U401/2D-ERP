@@ -112,7 +112,7 @@ export default function ShellLayout({
           </header>
 
           {/* Content scroll region */}
-          <div className="flex-1 min-h-0 overflow-y-auto pb-6">{children}</div>
+          <div className="flex-1 min-h-0 overflow-y-auto pb-6 relative flex flex-col">{children}</div>
         </main>
       </div>
     </div>

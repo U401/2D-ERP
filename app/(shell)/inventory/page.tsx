@@ -396,7 +396,7 @@ export default function AdminInventoryPage() {
 
   return (
 
-    <div className="flex-1 min-h-0 min-w-0 p-4 sm:p-6 lg:p-8 bg-gray-50/50">
+    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50/50">
       <div className="w-full max-w-7xl mx-auto">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>

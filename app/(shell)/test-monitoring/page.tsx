@@ -178,7 +178,7 @@ $$;`
     }
 
     return (
-        <div className="flex-1 min-h-0 min-w-0 p-4 sm:p-6 lg:p-8">
+        <div className="p-4 sm:p-6 lg:p-8">
             <div className="flex items-center justify-between gap-4 mb-4">
                 <h1 className="text-2xl font-bold">Monitoring System Test</h1>
                 <button

@@ -247,7 +247,7 @@ $$;`
   }
 
   return (
-    <div className="flex-1 min-h-0 min-w-0 p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-black dark:text-white mb-4">
           Run GCash Database Migrations
