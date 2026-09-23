@@ -400,8 +400,8 @@ export default function AdminInventoryPage() {
       <div className="w-full max-w-7xl mx-auto">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-gray-900 text-4xl font-bold tracking-tight">Inventory Management</h1>
-            <p className="text-gray-500 mt-2 text-lg mb-4">
+            <h1 className="text-gray-900 text-3xl font-bold tracking-tight">Inventory Management</h1>
+            <p className="text-gray-500 mt-1 text-base mb-4">
               {userRole === 'admin' ? 'Monitor product availability across all stores' : 'Manage your store\'s stock levels and availability'}
             </p>
           </div>
@@ -413,14 +413,14 @@ export default function AdminInventoryPage() {
                 setRefreshing(false)
               }}
               disabled={refreshing || loading}
-              className="p-4 rounded-2xl border border-gray-200 bg-white shadow-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all disabled:opacity-40"
+              className="p-3 rounded-xl border border-gray-200 bg-white shadow-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all disabled:opacity-40"
               title="Refresh inventory"
             >
               <span className={`material-symbols-outlined icon-xl ${refreshing ? 'animate-spin' : ''}`}>refresh</span>
             </button>
             <div className="flex bg-white p-2 rounded-2xl border border-gray-200 shadow-sm gap-1 w-full sm:w-auto overflow-x-auto">
-              <button onClick={() => setActiveTab('inventory')} className={`px-4 sm:px-8 py-3 sm:py-4 rounded-xl text-base sm:text-xl font-bold transition-all whitespace-nowrap flex-1 sm:flex-none ${activeTab === 'inventory' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}>Yield Capacity</button>
-              <button onClick={() => setActiveTab('stock')} className={`px-4 sm:px-8 py-3 sm:py-4 rounded-xl text-base sm:text-xl font-bold transition-all whitespace-nowrap flex-1 sm:flex-none ${activeTab === 'stock' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}>Store Stocks</button>
+              <button onClick={() => setActiveTab('inventory')} className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-base sm:text-lg font-bold transition-all whitespace-nowrap flex-1 sm:flex-none ${activeTab === 'inventory' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}>Yield Capacity</button>
+              <button onClick={() => setActiveTab('stock')} className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-base sm:text-lg font-bold transition-all whitespace-nowrap flex-1 sm:flex-none ${activeTab === 'stock' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}>Store Stocks</button>
             </div>
           </div>
         </header>
@@ -430,7 +430,7 @@ export default function AdminInventoryPage() {
         {activeTab === 'inventory' && !error && (
           <div className="mb-8 relative max-w-xl">
             <span className="material-symbols-outlined icon-xl absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
-            <input className="block w-full pl-14 pr-6 py-5 border border-gray-200 rounded-2xl bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all text-xl" placeholder={userRole === 'admin' ? "Search stores or products..." : "Search products..."} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            <input className="block w-full pl-14 pr-6 py-4 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all text-lg" placeholder={userRole === 'admin' ? "Search stores or products..." : "Search products..."} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
         )}
         {loading ? (
@@ -453,17 +453,17 @@ export default function AdminInventoryPage() {
                 
                 <div className="overflow-x-auto flex-1 p-6">
                   <table className="w-full text-left border-collapse">
-                    <thead><tr className="bg-gray-50/50"><th className="px-4 py-4 md:px-8 md:py-6 text-xs md:text-sm font-bold text-gray-400 uppercase tracking-widest rounded-l-xl">Item</th><th className="px-4 py-4 md:px-8 md:py-6 text-xs md:text-sm font-bold text-gray-400 uppercase tracking-widest">Current Stock</th><th className="px-4 py-4 md:px-8 md:py-6 text-xs md:text-sm font-bold text-gray-400 uppercase tracking-widest text-right">Unit Cost</th><th className="px-4 py-4 md:px-8 md:py-6 text-xs md:text-sm font-bold text-gray-400 uppercase tracking-widest text-right rounded-r-xl">Actions</th></tr></thead>
+                    <thead><tr className="bg-gray-50/50"><th className="px-4 py-3 md:px-6 md:py-4 text-xs font-bold text-gray-400 uppercase tracking-widest rounded-l-xl">Item</th><th className="px-4 py-3 md:px-6 md:py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Current Stock</th><th className="px-4 py-3 md:px-6 md:py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">Unit Cost</th><th className="px-4 py-3 md:px-6 md:py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right rounded-r-xl">Actions</th></tr></thead>
                     <tbody className="divide-y divide-gray-100">
                       {allIngredients.filter(ing => ing.store_name === stores.find(s => s.id === viewStoreStockId)?.name).map((ing) => (
                         <tr key={ing.id} className={`transition-colors ${ing.current_stock === 0 ? 'bg-red-50/30 hover:bg-red-50/50' : isLowStock(ing) ? 'bg-orange-50/30 hover:bg-orange-50/50' : 'hover:bg-gray-50/50'}`}>
-                          <td className="px-4 py-4 md:px-8 md:py-6"><div><p className="font-semibold text-gray-900 text-base md:text-xl flex items-center flex-wrap gap-2">{ing.name}{ing.current_stock === 0 && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-800">Out of Stock</span>}{isLowStock(ing) && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-800">Low Stock</span>}</p><p className="text-xs md:text-sm text-gray-400 mt-1">Unit: {ing.unit}</p></div></td>
-                          <td className="px-4 py-4 md:px-8 md:py-6"><div className="flex items-end gap-1 md:gap-2"><span className={`text-2xl md:text-4xl font-black tracking-tight ${ing.current_stock === 0 ? 'text-red-600' : isLowStock(ing) ? 'text-orange-500' : 'text-gray-900'}`}>{ing.current_stock.toLocaleString()}</span><span className="text-xs md:text-base text-gray-400 mb-0.5 md:mb-1">{ing.unit}</span></div></td>
-                          <td className="px-4 py-4 md:px-8 md:py-6 text-right"><p className="text-lg md:text-2xl font-black text-gray-900">₱{((ing.purchase_price || 0) / (ing.purchase_yield || 1)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></td>
-                          <td className="px-4 py-4 md:px-8 md:py-6 text-right">
+                          <td className="px-4 py-3 md:px-6 md:py-4"><div><p className="font-semibold text-gray-900 text-base md:text-lg flex items-center flex-wrap gap-2">{ing.name}{ing.current_stock === 0 && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-800">Out of Stock</span>}{isLowStock(ing) && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-800">Low Stock</span>}</p><p className="text-xs text-gray-400 mt-1">Unit: {ing.unit}</p></div></td>
+                          <td className="px-4 py-3 md:px-6 md:py-4"><div className="flex items-end gap-1 md:gap-2"><span className={`text-xl md:text-3xl font-black tracking-tight ${ing.current_stock === 0 ? 'text-red-600' : isLowStock(ing) ? 'text-orange-500' : 'text-gray-900'}`}>{ing.current_stock.toLocaleString()}</span><span className="text-xs md:text-base text-gray-400 mb-0.5 md:mb-1">{ing.unit}</span></div></td>
+                          <td className="px-4 py-3 md:px-6 md:py-4 text-right"><p className="text-base md:text-xl font-black text-gray-900">₱{((ing.purchase_price || 0) / (ing.purchase_yield || 1)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></td>
+                          <td className="px-4 py-3 md:px-6 md:py-4 text-right">
                             <div className="flex justify-end gap-2 md:gap-3">
-                              {userRole === 'admin' && <button onClick={() => setEditingIngredient(ing)} className="p-2 md:p-3 rounded-lg md:rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" title="Edit"><span className="material-symbols-outlined text-base md:text-xl">edit</span></button>}
-                              <button onClick={() => { setUpdatingStock({ id: ing.id, name: ing.name, current: ing.current_stock, unit: ing.unit }); setNewStockValue('') }} className="inline-flex items-center gap-1 md:gap-2 px-3 py-2 md:px-6 md:py-3 rounded-lg md:rounded-xl bg-gray-900 text-white text-sm md:text-lg font-semibold hover:bg-gray-800 transition-colors shadow-sm" title="Update stock level"><span className="material-symbols-outlined text-base md:text-xl">inventory_2</span><span className="hidden sm:inline">Update Stock</span></button>
+                              {userRole === 'admin' && <button onClick={() => setEditingIngredient(ing)} className="p-2 md:p-3 rounded-lg md:rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" title="Edit"><span className="material-symbols-outlined text-base md:text-lg">edit</span></button>}
+                              <button onClick={() => { setUpdatingStock({ id: ing.id, name: ing.name, current: ing.current_stock, unit: ing.unit }); setNewStockValue('') }} className="inline-flex items-center gap-1 md:gap-2 px-3 py-2 md:px-4 md:py-2.5 rounded-lg bg-gray-900 text-white text-sm md:text-base font-semibold hover:bg-gray-800 transition-colors shadow-sm" title="Update stock level"><span className="material-symbols-outlined text-base md:text-lg">inventory_2</span><span className="hidden sm:inline">Update Stock</span></button>
                               {userRole === 'admin' && <button onClick={() => setRemovingStock({ id: ing.id, name: ing.name, current: ing.current_stock, unit: ing.unit })} disabled={ing.current_stock === 0} className={`px-3 py-2 md:px-6 md:py-3 rounded-lg md:rounded-xl text-sm md:text-lg font-semibold transition-colors ${ing.current_stock === 0 ? 'text-gray-300 cursor-not-allowed' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}>Remove</button>}
                             </div>
                           </td>
@@ -482,7 +482,7 @@ export default function AdminInventoryPage() {
                   <div key={inventory.store.id} className="bg-white rounded-[2rem] shadow-sm border border-gray-200 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
                     <div className="bg-gradient-to-br from-gray-50 to-white px-5 py-5 sm:px-8 sm:py-8 border-b border-gray-100 flex flex-col sm:flex-row justify-between gap-4 sm:gap-6">
                       <div>
-                        <div className="flex items-center gap-2 sm:gap-3 mb-2"><span className="material-symbols-outlined text-gray-400 icon-xl">store</span><h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{inventory.store.name}</h2></div>
+                        <div className="flex items-center gap-2 sm:gap-3 mb-2"><span className="material-symbols-outlined text-gray-400 icon-xl">store</span><h2 className="text-xl sm:text-2xl font-bold text-gray-900">{inventory.store.name}</h2></div>
                         <div className="inline-flex items-center px-3 py-1 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-600">{inventory.totalProducts} Products</div>
                       </div>
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-end w-full sm:w-auto mt-3 sm:mt-0">
@@ -492,7 +492,7 @@ export default function AdminInventoryPage() {
                           title="View Store Stock"
                         >
                           <span className="material-symbols-outlined text-xl sm:icon-xl mb-1">inventory_2</span>
-                          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">Stock</span>
+                          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider font-bold">Stock</span>
                         </button>
                       </div>
                     </div>
@@ -507,7 +507,7 @@ export default function AdminInventoryPage() {
                           >
                             <div className="flex-1 min-w-0 mr-3 sm:mr-6">
                               <p className="font-bold text-gray-900 text-lg sm:text-2xl truncate group-hover:text-black mb-1">{pc.product_name}</p>
-                              <p className="text-[10px] sm:text-sm text-gray-400 font-medium uppercase tracking-wider truncate">
+                              <p className="text-[10px] sm:text-sm text-gray-400 font-medium uppercase tracking-wider font-bold truncate">
                                 {pc.can_make === 0 ? `Out of stock: ${pc.limiting_ingredient}` : `Limiting: ${pc.limiting_ingredient}`}
                               </p>
                             </div>
@@ -533,7 +533,7 @@ export default function AdminInventoryPage() {
                   <div className="flex-1 overflow-y-auto p-6 scrollbar-thin max-h-[600px] space-y-3">
                     {filteredStores[0]?.productCapacities.filter(pc => !searchQuery || pc.product_name.toLowerCase().includes(searchQuery.toLowerCase())).map((pc) => (
                       <button key={pc.product_id} onClick={() => handleProductClick(filteredStores[0].store.id, pc)} className={`w-full flex items-center justify-between p-6 rounded-3xl transition-all ${selectedProduct?.product.product_id === pc.product_id ? 'bg-gray-900 text-white shadow-xl shadow-gray-900/20' : 'bg-gray-100/60 hover:bg-gray-100 text-gray-900 border border-transparent'}`}>
-                        <div className="text-left"><p className="font-bold text-xl truncate mb-1">{pc.product_name}</p><p className={`text-sm font-semibold uppercase tracking-wider ${selectedProduct?.product.product_id === pc.product_id ? 'text-gray-400' : 'text-gray-500'}`}>{pc.can_make} available</p></div>
+                        <div className="text-left"><p className="font-bold text-xl truncate mb-1">{pc.product_name}</p><p className={`text-sm font-semibold uppercase tracking-wider font-bold ${selectedProduct?.product.product_id === pc.product_id ? 'text-gray-400' : 'text-gray-500'}`}>{pc.can_make} available</p></div>
                         <span className="material-symbols-outlined icon-xl">chevron_right</span>
                       </button>
                     ))}
@@ -637,26 +637,26 @@ export default function AdminInventoryPage() {
                 <table className="w-full text-left border-collapse whitespace-nowrap">
                   <thead>
                     <tr className="bg-gray-50/50 select-none">
-                      <th className="px-4 py-4 md:px-8 md:py-6 text-xs md:text-sm font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('name')}>
+                      <th className="px-4 py-3 md:px-6 md:py-4 text-xs font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('name')}>
                         Item <SortIcon columnKey="name" />
                       </th>
-                      <th className="px-4 py-4 md:px-8 md:py-6 text-xs md:text-sm font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('category')}>
+                      <th className="px-4 py-3 md:px-6 md:py-4 text-xs font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('category')}>
                         Category <SortIcon columnKey="category" />
                       </th>
                       {userRole === 'admin' && (
-                        <th className="px-4 py-4 md:px-8 md:py-6 text-xs md:text-sm font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('store_name')}>
+                        <th className="px-4 py-3 md:px-6 md:py-4 text-xs font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('store_name')}>
                           Store <SortIcon columnKey="store_name" />
                         </th>
                       )}
-                      <th className="px-4 py-4 md:px-8 md:py-6 text-xs md:text-sm font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('current_stock')}>
+                      <th className="px-4 py-3 md:px-6 md:py-4 text-xs font-bold text-gray-500 uppercase tracking-widest cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('current_stock')}>
                         Current Stock <SortIcon columnKey="current_stock" />
                       </th>
                       {userRole === 'admin' && (
-                        <th className="px-4 py-4 md:px-8 md:py-6 text-xs md:text-sm font-bold text-gray-500 uppercase tracking-widest text-right cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('unit_cost')}>
+                        <th className="px-4 py-3 md:px-6 md:py-4 text-xs font-bold text-gray-500 uppercase tracking-widest text-right cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('unit_cost')}>
                           Unit Cost <SortIcon columnKey="unit_cost" />
                         </th>
                       )}
-                      <th className="px-4 py-4 md:px-8 md:py-6 text-xs md:text-sm font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>
+                      <th className="px-4 py-3 md:px-6 md:py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -664,28 +664,28 @@ export default function AdminInventoryPage() {
                       <tr><td colSpan={6} className="px-8 py-12 text-center text-gray-500 text-lg font-medium">No items match your filters.</td></tr>
                     ) : paginatedIngredients.map((ing) => (
                       <tr key={ing.id} className={`transition-colors ${ing.current_stock === 0 ? 'bg-red-50/30 hover:bg-red-50/50' : isLowStock(ing) ? 'bg-orange-50/30 hover:bg-orange-50/50' : 'hover:bg-gray-50/50'}`}>
-                        <td className="px-4 py-4 md:px-8 md:py-6">
+                        <td className="px-4 py-3 md:px-6 md:py-4">
                           <div>
-                            <p className="font-semibold text-gray-900 text-base md:text-xl flex items-center flex-wrap gap-2">
+                            <p className="font-semibold text-gray-900 text-base md:text-lg flex items-center flex-wrap gap-2">
                               {ing.name}
                               {ing.current_stock === 0 && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-800">Out of Stock</span>}
                               {isLowStock(ing) && <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-800">Low Stock</span>}
                             </p>
-                            <p className="text-xs md:text-sm text-gray-400 mt-1">Unit: {ing.unit}</p>
+                            <p className="text-xs text-gray-400 mt-1">Unit: {ing.unit}</p>
                           </div>
                         </td>
-                        <td className="px-4 py-4 md:px-8 md:py-6">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs md:text-sm font-medium bg-gray-100 text-gray-600">
+                        <td className="px-4 py-3 md:px-6 md:py-4">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
                             {ing.category || 'Uncategorized'}
                           </span>
                         </td>
-                        {userRole === 'admin' && <td className="px-4 py-4 md:px-8 md:py-6"><span className="text-sm md:text-lg font-medium text-gray-600">{ing.store_name || 'N/A'}</span></td>}
-                        <td className="px-4 py-4 md:px-8 md:py-6"><div className="flex items-end gap-1 md:gap-2"><span className={`text-2xl md:text-4xl font-black tracking-tight ${ing.current_stock === 0 ? 'text-red-600' : isLowStock(ing) ? 'text-orange-500' : 'text-gray-900'}`}>{ing.current_stock.toLocaleString()}</span><span className="text-xs md:text-base text-gray-400 mb-0.5 md:mb-1">{ing.unit}</span></div></td>
-                        {userRole === 'admin' && <td className="px-4 py-4 md:px-8 md:py-6 text-right"><p className="text-lg md:text-2xl font-black text-gray-900">₱{((ing.purchase_price || 0) / (ing.purchase_yield || 1)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></td>}
-                        <td className="px-4 py-4 md:px-8 md:py-6 text-right">
+                        {userRole === 'admin' && <td className="px-4 py-3 md:px-6 md:py-4"><span className="text-sm md:text-lg font-medium text-gray-600">{ing.store_name || 'N/A'}</span></td>}
+                        <td className="px-4 py-3 md:px-6 md:py-4"><div className="flex items-end gap-1 md:gap-2"><span className={`text-xl md:text-3xl font-black tracking-tight ${ing.current_stock === 0 ? 'text-red-600' : isLowStock(ing) ? 'text-orange-500' : 'text-gray-900'}`}>{ing.current_stock.toLocaleString()}</span><span className="text-xs md:text-base text-gray-400 mb-0.5 md:mb-1">{ing.unit}</span></div></td>
+                        {userRole === 'admin' && <td className="px-4 py-3 md:px-6 md:py-4 text-right"><p className="text-base md:text-xl font-black text-gray-900">₱{((ing.purchase_price || 0) / (ing.purchase_yield || 1)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></td>}
+                        <td className="px-4 py-3 md:px-6 md:py-4 text-right">
                           <div className="flex justify-end gap-2 md:gap-3">
-                            {userRole === 'admin' && <button onClick={() => setEditingIngredient(ing)} className="p-2 md:p-3 rounded-lg md:rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" title="Edit"><span className="material-symbols-outlined text-base md:text-xl">edit</span></button>}
-                            <button onClick={() => { setUpdatingStock({ id: ing.id, name: ing.name, current: ing.current_stock, unit: ing.unit }); setNewStockValue('') }} className="inline-flex items-center gap-1 md:gap-2 px-3 py-2 md:px-6 md:py-3 rounded-lg md:rounded-xl bg-gray-900 text-white text-sm md:text-lg font-semibold hover:bg-gray-800 transition-colors shadow-sm" title="Update stock level"><span className="material-symbols-outlined text-base md:text-xl">inventory_2</span><span className="hidden sm:inline">Update</span></button>
+                            {userRole === 'admin' && <button onClick={() => setEditingIngredient(ing)} className="p-2 md:p-3 rounded-lg md:rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors" title="Edit"><span className="material-symbols-outlined text-base md:text-lg">edit</span></button>}
+                            <button onClick={() => { setUpdatingStock({ id: ing.id, name: ing.name, current: ing.current_stock, unit: ing.unit }); setNewStockValue('') }} className="inline-flex items-center gap-1 md:gap-2 px-3 py-2 md:px-4 md:py-2.5 rounded-lg bg-gray-900 text-white text-sm md:text-base font-semibold hover:bg-gray-800 transition-colors shadow-sm" title="Update stock level"><span className="material-symbols-outlined text-base md:text-lg">inventory_2</span><span className="hidden sm:inline">Update</span></button>
                             {userRole === 'admin' && <button onClick={() => setRemovingStock({ id: ing.id, name: ing.name, current: ing.current_stock, unit: ing.unit })} disabled={ing.current_stock === 0} className={`px-3 py-2 md:px-6 md:py-3 rounded-lg md:rounded-xl text-sm md:text-lg font-semibold transition-colors ${ing.current_stock === 0 ? 'text-gray-300 cursor-not-allowed' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}>Remove</button>}
                           </div>
                         </td>
