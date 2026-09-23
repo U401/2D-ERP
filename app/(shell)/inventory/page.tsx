@@ -396,7 +396,7 @@ export default function AdminInventoryPage() {
 
   return (
 
-    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50/50">
+    <div className="p-4 sm:p-6 lg:p-6 bg-gray-50/50">
       <div className="w-full max-w-7xl mx-auto">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
@@ -480,18 +480,18 @@ export default function AdminInventoryPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 {filteredStores.map((inventory) => (
                   <div key={inventory.store.id} className="bg-white rounded-[2rem] shadow-sm border border-gray-200 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-                    <div className="bg-gradient-to-br from-gray-50 to-white px-5 py-5 sm:px-8 sm:py-8 border-b border-gray-100 flex flex-col sm:flex-row justify-between gap-4 sm:gap-6">
+                    <div className="bg-gradient-to-br from-gray-50 to-white px-5 py-5 sm:px-6 sm:py-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between gap-4 sm:gap-6">
                       <div>
-                        <div className="flex items-center gap-2 sm:gap-3 mb-2"><span className="material-symbols-outlined text-gray-400 icon-xl">store</span><h2 className="text-xl sm:text-2xl font-bold text-gray-900">{inventory.store.name}</h2></div>
+                        <div className="flex items-center gap-2 sm:gap-3 mb-2"><span className="material-symbols-outlined text-gray-400 icon-xl">store</span><h2 className="text-lg sm:text-xl font-bold text-gray-900">{inventory.store.name}</h2></div>
                         <div className="inline-flex items-center px-3 py-1 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium bg-gray-100 text-gray-600">{inventory.totalProducts} Products</div>
                       </div>
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-end w-full sm:w-auto mt-3 sm:mt-0">
                         <button 
                           onClick={() => setViewStoreStockId(inventory.store.id)} 
-                          className="flex sm:flex-col items-center justify-center gap-2 sm:gap-0 p-3 sm:p-4 bg-gray-900 text-white rounded-xl sm:rounded-2xl hover:bg-gray-800 transition-all shadow-md active:scale-95 w-full sm:w-auto shrink-0"
+                          className="flex sm:flex-col items-center justify-center gap-2 sm:gap-0 p-3 bg-gray-900 text-white rounded-xl sm:rounded-2xl hover:bg-gray-800 transition-all shadow-md active:scale-95 w-full sm:w-auto shrink-0"
                           title="View Store Stock"
                         >
-                          <span className="material-symbols-outlined text-xl sm:icon-xl mb-1">inventory_2</span>
+                          <span className="material-symbols-outlined text-xl mb-1">inventory_2</span>
                           <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider font-bold">Stock</span>
                         </button>
                       </div>
@@ -503,20 +503,20 @@ export default function AdminInventoryPage() {
                           <button 
                             key={pc.product_id} 
                             onClick={() => handleProductClick(inventory.store.id, pc)}
-                            className="w-full flex items-center justify-between p-4 sm:p-6 border border-gray-100 rounded-xl sm:rounded-2xl bg-white hover:bg-gray-50 transition-all text-left group"
+                            className="w-full flex items-center justify-between p-4 border border-gray-100 rounded-xl sm:rounded-2xl bg-white hover:bg-gray-50 transition-all text-left group"
                           >
                             <div className="flex-1 min-w-0 mr-3 sm:mr-6">
-                              <p className="font-bold text-gray-900 text-lg sm:text-2xl truncate group-hover:text-black mb-1">{pc.product_name}</p>
+                              <p className="font-bold text-gray-900 text-base sm:text-xl truncate group-hover:text-black mb-1">{pc.product_name}</p>
                               <p className="text-[10px] sm:text-sm text-gray-400 font-medium uppercase tracking-wider font-bold truncate">
                                 {pc.can_make === 0 ? `Out of stock: ${pc.limiting_ingredient}` : `Limiting: ${pc.limiting_ingredient}`}
                               </p>
                             </div>
-                            <div className="flex items-center gap-3 sm:gap-8 shrink-0">
+                            <div className="flex items-center gap-3 sm:gap-6 shrink-0">
                               <div className="text-right">
-                                <p className={`text-2xl sm:text-4xl font-black leading-none ${pc.can_make === 0 ? 'text-red-600' : 'text-gray-900'}`}>{pc.can_make}</p>
+                                <p className={`text-xl sm:text-3xl font-black leading-none ${pc.can_make === 0 ? 'text-red-600' : 'text-gray-900'}`}>{pc.can_make}</p>
                                 <p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase mt-1 sm:mt-2">Orders</p>
                               </div>
-                              <span className="material-symbols-outlined text-xl sm:icon-xl text-gray-300 group-hover:text-gray-900 transition-colors">chevron_right</span>
+                              <span className="material-symbols-outlined text-xl text-gray-300 group-hover:text-gray-900 transition-colors">chevron_right</span>
                             </div>
                           </button>
                         ))}
@@ -526,10 +526,10 @@ export default function AdminInventoryPage() {
               </div>
             )
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-[700px]">
-              <div className="lg:col-span-4 flex flex-col gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[700px]">
+              <div className="lg:col-span-4 flex flex-col gap-6">
                 <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden flex flex-col flex-1">
-                  <div className="p-8 border-b border-gray-50 flex items-center justify-between"><h3 className="font-bold text-gray-900 text-xl tracking-tight">Menu Products</h3><span className="text-sm font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded-lg">{filteredStores[0]?.productCapacities.length} items</span></div>
+                  <div className="p-6 border-b border-gray-50 flex items-center justify-between"><h3 className="font-bold text-gray-900 text-xl tracking-tight">Menu Products</h3><span className="text-sm font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded-lg">{filteredStores[0]?.productCapacities.length} items</span></div>
                   <div className="flex-1 overflow-y-auto p-6 scrollbar-thin max-h-[600px] space-y-3">
                     {filteredStores[0]?.productCapacities.filter(pc => !searchQuery || pc.product_name.toLowerCase().includes(searchQuery.toLowerCase())).map((pc) => (
                       <button key={pc.product_id} onClick={() => handleProductClick(filteredStores[0].store.id, pc)} className={`w-full flex items-center justify-between p-6 rounded-3xl transition-all ${selectedProduct?.product.product_id === pc.product_id ? 'bg-gray-900 text-white shadow-xl shadow-gray-900/20' : 'bg-gray-100/60 hover:bg-gray-100 text-gray-900 border border-transparent'}`}>
@@ -543,19 +543,19 @@ export default function AdminInventoryPage() {
               <div className="lg:col-span-8">
                 {selectedProduct ? (
                   <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full">
-                    <div className="p-12 border-b border-gray-50 bg-gradient-to-br from-white to-gray-50/50 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                    <div className="p-12 border-b border-gray-50 bg-gradient-to-br from-white to-gray-50/50 flex flex-col md:flex-row md:items-center justify-between gap-6">
                       <div><p className="text-sm font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Ingredient Analysis</p><h1 className="text-5xl font-black text-gray-900 tracking-tight leading-none">{selectedProduct.product.product_name}</h1></div>
-                      <div className="flex items-center gap-4 text-right"><div><p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Max Orders</p><p className={`text-6xl font-black tracking-tighter leading-none ${selectedProduct.product.can_make === 0 ? 'text-red-600' : 'text-gray-900'}`}>{selectedProduct.product.can_make}</p></div></div>
+                      <div className="flex items-center gap-4 text-right"><div><p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Max Orders</p><p className={`text-5xl font-black tracking-tighter leading-none ${selectedProduct.product.can_make === 0 ? 'text-red-600' : 'text-gray-900'}`}>{selectedProduct.product.can_make}</p></div></div>
                     </div>
                     <div className="p-10 flex-1 overflow-y-auto">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                         {selectedProduct.ingredients.length === 0 ? (
                           <div className="col-span-full py-24 text-center text-gray-400">
                             <p className="text-2xl font-bold">No Recipe Found</p>
                           </div>
                         ) : (
                           selectedProduct.ingredients.map((ing) => (
-                            <div key={ing.ingredient_id} className="p-8 rounded-[2rem] border border-gray-100 bg-white hover:border-gray-200 transition-all shadow-sm hover:shadow-md">
+                            <div key={ing.ingredient_id} className="p-6 rounded-[2rem] border border-gray-100 bg-white hover:border-gray-200 transition-all shadow-sm hover:shadow-md">
                               <div className="flex justify-between items-start gap-4 mb-6">
                                 <div className="flex-1 min-w-0">
                                   <h4 className="font-black text-gray-900 text-2xl leading-tight mb-2">{ing.ingredient_name}</h4>
@@ -567,7 +567,7 @@ export default function AdminInventoryPage() {
                                   </div>
                                 </div>
                                 <div className="text-right shrink-0 bg-gray-50 p-4 rounded-[1.5rem] border border-gray-100/50">
-                                  <p className={`text-4xl font-black tracking-tight leading-none mb-1 ${ing.current_stock === 0 ? 'text-red-600' : 'text-gray-900'}`}>{ing.current_stock}</p>
+                                  <p className={`text-3xl font-black tracking-tight leading-none mb-1 ${ing.current_stock === 0 ? 'text-red-600' : 'text-gray-900'}`}>{ing.current_stock}</p>
                                   <p className="text-xs font-bold text-gray-400 uppercase tracking-tight">{ing.unit} stock</p>
                                 </div>
                               </div>
@@ -597,7 +597,7 @@ export default function AdminInventoryPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
                   <div>
                     <div className="flex items-center gap-3 sm:gap-4">
-                      <h2 className="font-bold text-gray-900 text-xl sm:text-2xl">{userRole === 'admin' ? 'All Stores Stock' : 'Store Stock'}</h2>
+                      <h2 className="font-bold text-gray-900 text-lg sm:text-xl">{userRole === 'admin' ? 'All Stores Stock' : 'Store Stock'}</h2>
                       {userRole === 'admin' && <button onClick={() => setShowAddModal(true)} className="inline-flex items-center gap-1 sm:gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-lg sm:rounded-xl bg-gray-900 text-white text-sm sm:text-lg font-bold hover:bg-gray-800 transition-colors shadow-sm"><span className="material-symbols-outlined text-lg sm:text-xl">add</span><span className="hidden sm:inline">Add New</span></button>}
                     </div>
                     <p className="text-sm sm:text-base text-gray-400 mt-1 sm:mt-2">Update absolute stock levels</p>
@@ -752,7 +752,7 @@ export default function AdminInventoryPage() {
                 <div><h3 className="text-2xl font-bold text-gray-900">{selectedProduct.product.product_name}</h3><p className="text-sm text-gray-500 mt-1">Recipe Analysis</p></div>
                 <button onClick={closeProductModal} className="px-3 py-2 text-sm font-semibold text-gray-500 hover:text-gray-900 bg-white border border-gray-200 rounded-lg transition-colors">Close</button>
               </div>
-              <div className="p-8 overflow-y-auto max-h-[calc(90vh-100px)] space-y-4">
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-100px)] space-y-4">
                 {selectedProduct.ingredients.length === 0 ? <p className="text-center py-12 text-gray-400">No recipe defined</p> : selectedProduct.ingredients.map((ing) => (
                   <div key={ing.ingredient_id} className="p-5 border border-gray-100 rounded-2xl bg-gray-50/50 flex justify-between items-center">
                     <div><p className="font-bold text-gray-900">{ing.ingredient_name}</p><p className="text-xs text-gray-400">Required: {ing.required_quantity} {ing.unit}</p></div>
