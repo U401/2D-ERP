@@ -711,7 +711,7 @@ export default function PosPage() {
           {activeTab === 'order' ? (
             <>
               {/* Cart Items */}
-              <div className="flex-grow min-h-0 py-4 px-4 space-y-3 overflow-y-auto">
+              <div className="flex-grow min-h-0 py-2 px-4 space-y-2 overflow-y-auto">
                 {cart.length === 0 ? (
                   <p className="text-gray-400 text-xl text-center py-14">Cart is empty</p>
                 ) : (
@@ -793,8 +793,8 @@ export default function PosPage() {
               </div>
 
               {/* Cart Footer */}
-              <div className="p-4 border-t border-gray-200 space-y-4 shrink-0">
-                <div className="flex justify-between text-gray-900 font-black text-3xl">
+              <div className="p-4 border-t border-gray-200 space-y-2 shrink-0">
+                <div className="flex justify-between text-gray-900 font-black text-2xl">
                   <span>Total</span>
                   <span>₱{total.toFixed(2)}</span>
                 </div>
@@ -840,25 +840,25 @@ export default function PosPage() {
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => setPaymentMethod('cash')}
-                    className={`flex flex-col items-center justify-center h-20 px-2 rounded-2xl text-base font-bold tracking-wide transition-all active:scale-95 ${
+                    className={`flex flex-col items-center justify-center h-14 px-2 rounded-xl text-sm font-bold tracking-wide transition-all active:scale-95 ${
                       paymentMethod === 'cash'
                         ? 'bg-gray-900 text-white shadow-lg'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    <span className="material-symbols-outlined icon-xl mb-1">payments</span>
-                    <span className="text-lg">Cash</span>
+                    <span className="material-symbols-outlined text-2xl mb-0.5">payments</span>
+                    <span className="text-sm">Cash</span>
                   </button>
                   <button
                     onClick={() => setPaymentMethod('card')}
-                    className={`flex flex-col items-center justify-center h-20 px-2 rounded-2xl text-base font-bold tracking-wide transition-all active:scale-95 ${
+                    className={`flex flex-col items-center justify-center h-14 px-2 rounded-xl text-sm font-bold tracking-wide transition-all active:scale-95 ${
                       paymentMethod === 'card'
                         ? 'bg-gray-900 text-white shadow-lg'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    <span className="material-symbols-outlined icon-xl mb-1">credit_card</span>
-                    <span className="text-lg">Card</span>
+                    <span className="material-symbols-outlined text-2xl mb-0.5">credit_card</span>
+                    <span className="text-sm">Card</span>
                   </button>
                   <button
                     onClick={() => {
@@ -874,14 +874,14 @@ export default function PosPage() {
                       setShowGCashModal(true)
                     }}
                     disabled={!session || cart.length === 0}
-                    className={`flex flex-col items-center justify-center h-20 px-2 rounded-2xl text-base font-bold tracking-wide transition-all active:scale-95 ${
+                    className={`flex flex-col items-center justify-center h-14 px-2 rounded-xl text-sm font-bold tracking-wide transition-all active:scale-95 ${
                       paymentMethod === 'gcash'
                         ? 'bg-gray-900 text-white shadow-lg'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     } ${!session || cart.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
-                    <span className="material-symbols-outlined icon-xl mb-1">qr_code_scanner</span>
-                    <span className="text-lg">GCash</span>
+                    <span className="material-symbols-outlined text-2xl mb-0.5">qr_code_scanner</span>
+                    <span className="text-sm">GCash</span>
                   </button>
                 </div>
 
@@ -905,7 +905,7 @@ export default function PosPage() {
                     }
                   }}
                   disabled={!session || cart.length === 0 || isProcessing}
-                  className="w-full flex items-center justify-center h-20 px-6 rounded-2xl bg-gray-900 text-white text-2xl font-black tracking-wide hover:bg-gray-800 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
+                  className="w-full flex items-center justify-center h-14 px-6 rounded-xl bg-gray-900 text-white text-xl font-black tracking-wide hover:bg-gray-800 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
                 >
                   {isProcessing ? 'Processing...' : `Charge ₱${total.toFixed(2)}`}
                 </button>
@@ -916,7 +916,7 @@ export default function PosPage() {
                     setPaymentMethod('cash')
                   }}
                   disabled={cart.length === 0}
-                  className="w-full flex items-center justify-center h-12 px-6 rounded-xl text-gray-400 text-lg font-semibold tracking-wide hover:bg-gray-100 hover:text-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center h-10 px-6 rounded-lg text-gray-400 text-base font-semibold tracking-wide hover:bg-gray-100 hover:text-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   Clear Cart
                 </button>
