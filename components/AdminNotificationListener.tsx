@@ -39,17 +39,30 @@ export function AdminNotificationListener() {
         
         let permissionGranted = false
         if (isTauri) {
-          const { isPermissionGranted, requestPermission } = await import('@tauri-apps/plugin-notification')
-          try {
-            permissionGranted = await isPermissionGranted()
-            if (!permissionGranted) {
-              const permission = await requestPermission()
-              permissionGranted = permission === 'granted'
+            const { isPermissionGranted, requestPermission, channels, createChannel } = await import('@tauri-apps/plugin-notification')
+            try {
+              permissionGranted = await isPermissionGranted()
+              if (!permissionGranted) {
+                const permission = await requestPermission()
+                permissionGranted = permission === 'granted'
+              }
+              
+              if (permissionGranted) {
+                const existingChannels = await channels()
+                if (!existingChannels.find(c => c.id === 'erp-admin-alerts')) {
+                  await createChannel({
+                    id: 'erp-admin-alerts',
+                    name: 'Admin Alerts',
+                    description: 'Important notifications for managers and admins',
+                    importance: 4, // High importance for heads-up banners
+                    visibility: 1
+                  })
+                }
+              }
+            } catch (permErr) {
+              console.warn('Could not request notification permissions:', permErr)
             }
-          } catch (permErr) {
-            console.warn('Could not request notification permissions:', permErr)
           }
-        }
 
         if (!mounted) return
 
@@ -65,11 +78,11 @@ export function AdminNotificationListener() {
 
           // 2. Send OS Push Notification
           if (isTauri && permissionGranted) {
-            try {
-              const { sendNotification } = await import('@tauri-apps/plugin-notification')
-              sendNotification(opts)
-            } catch (e) { console.warn('Failed to send push:', e) }
-          }
+              try {
+                const { sendNotification } = await import('@tauri-apps/plugin-notification')
+                sendNotification({ ...opts, channelId: 'erp-admin-alerts' })
+              } catch (e) { console.warn('Failed to send push:', e) }
+            }
         }
 
         // ─────────────────────────────────────────────────────────────────
