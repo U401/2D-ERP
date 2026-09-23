@@ -599,7 +599,7 @@ export default function PosPage() {
           </div>
 
           {/* Products Grid */}
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] content-start gap-4 p-4 overflow-y-auto flex-1">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] content-start gap-4 p-4 overflow-y-auto flex-1">
             {filteredProducts.map((product) => (
               <button
                 key={product.id}
@@ -626,10 +626,10 @@ export default function PosPage() {
                   }`}
                 ></div>
                 <div className="flex flex-col px-1">
-                  <p className="text-gray-900 text-lg font-bold leading-tight line-clamp-2">
+                  <p className="text-gray-900 text-sm md:text-base font-bold leading-tight line-clamp-2">
                     {product.name}
                   </p>
-                  <p className="text-emerald-700 text-lg font-bold mt-1">
+                  <p className="text-emerald-700 text-sm md:text-base font-bold mt-0.5">
                     ₱{product.price.toFixed(2)}
                   </p>
                 </div>
@@ -639,7 +639,7 @@ export default function PosPage() {
         </div>
 
         {/* Cart Sidebar */}
-        <div className="lg:w-[480px] xl:w-[520px] w-full bg-white border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col min-h-0 shrink-0">
+        <div className="lg:w-[350px] xl:w-[400px] w-full bg-white border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col min-h-0 shrink-0">
           {/* Session Banner */}
           <div className="p-4 border-b border-gray-200 space-y-3">
             <button
@@ -727,7 +727,7 @@ export default function PosPage() {
                           <img
                             src={item.product.image_url}
                             alt={item.product.name}
-                            className="w-14 h-14 object-cover rounded-lg flex-shrink-0"
+                            className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement
                               target.style.display = 'none'
@@ -735,10 +735,10 @@ export default function PosPage() {
                           />
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-gray-900 text-lg font-bold leading-tight truncate">
+                          <p className="text-gray-900 text-base font-bold leading-tight truncate">
                             {item.product.name}
                           </p>
-                          <p className="text-gray-500 text-base">
+                          <p className="text-gray-500 text-sm">
                             ₱{itemUnitPrice.toFixed(2)}
                           </p>
                         </div>
@@ -746,7 +746,7 @@ export default function PosPage() {
                         <div className="flex items-center gap-2 shrink-0">
                           <button
                             onClick={() => updateCartQuantity(item.cart_item_id, -1)}
-                            className="w-11 h-11 rounded-xl bg-gray-200 hover:bg-gray-300 active:scale-95 flex items-center justify-center text-gray-900 font-bold text-2xl transition-all"
+                            className="w-9 h-9 rounded-xl bg-gray-200 hover:bg-gray-300 active:scale-95 flex items-center justify-center text-gray-900 font-bold text-2xl transition-all"
                             aria-label="Decrease quantity"
                           >
                             −
@@ -756,13 +756,13 @@ export default function PosPage() {
                           </span>
                           <button
                             onClick={() => updateCartQuantity(item.cart_item_id, 1)}
-                            className="w-11 h-11 rounded-xl bg-gray-800 hover:bg-gray-700 active:scale-95 flex items-center justify-center text-white font-bold text-2xl transition-all"
+                            className="w-9 h-9 rounded-xl bg-gray-800 hover:bg-gray-700 active:scale-95 flex items-center justify-center text-white font-bold text-2xl transition-all"
                             aria-label="Increase quantity"
                           >
                             +
                           </button>
                         </div>
-                        <p className="text-gray-900 w-24 text-right text-lg font-bold shrink-0">
+                        <p className="text-gray-900 w-20 text-right text-base font-bold shrink-0">
                           ₱{(itemUnitPrice * item.quantity).toFixed(2)}
                         </p>
                         <button
