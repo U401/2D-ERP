@@ -532,8 +532,8 @@ export default function AdminInventoryPage() {
                   <div className="p-6 border-b border-gray-50 flex items-center justify-between"><h3 className="font-bold text-gray-900 text-xl tracking-tight">Menu Products</h3><span className="text-sm font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded-lg">{filteredStores[0]?.productCapacities.length} items</span></div>
                   <div className="flex-1 overflow-y-auto p-6 scrollbar-thin max-h-[600px] space-y-3">
                     {filteredStores[0]?.productCapacities.filter(pc => !searchQuery || pc.product_name.toLowerCase().includes(searchQuery.toLowerCase())).map((pc) => (
-                      <button key={pc.product_id} onClick={() => handleProductClick(filteredStores[0].store.id, pc)} className={`w-full flex items-center justify-between p-6 rounded-3xl transition-all ${selectedProduct?.product.product_id === pc.product_id ? 'bg-gray-900 text-white shadow-xl shadow-gray-900/20' : 'bg-gray-100/60 hover:bg-gray-100 text-gray-900 border border-transparent'}`}>
-                        <div className="text-left"><p className="font-bold text-xl truncate mb-1">{pc.product_name}</p><p className={`text-sm font-semibold uppercase tracking-wider font-bold ${selectedProduct?.product.product_id === pc.product_id ? 'text-gray-400' : 'text-gray-500'}`}>{pc.can_make} available</p></div>
+                      <button key={pc.product_id} onClick={() => handleProductClick(filteredStores[0].store.id, pc)} className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all ${selectedProduct?.product.product_id === pc.product_id ? 'bg-gray-900 text-white shadow-xl shadow-gray-900/20' : 'bg-gray-100/60 hover:bg-gray-100 text-gray-900 border border-transparent'}`}>
+                        <div className="text-left"><p className="font-bold text-lg truncate mb-1">{pc.product_name}</p><p className={`text-sm font-semibold uppercase tracking-wider font-bold ${selectedProduct?.product.product_id === pc.product_id ? 'text-gray-400' : 'text-gray-500'}`}>{pc.can_make} available</p></div>
                         <span className="material-symbols-outlined icon-xl">chevron_right</span>
                       </button>
                     ))}
@@ -543,11 +543,11 @@ export default function AdminInventoryPage() {
               <div className="lg:col-span-8">
                 {selectedProduct ? (
                   <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full">
-                    <div className="p-12 border-b border-gray-50 bg-gradient-to-br from-white to-gray-50/50 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                      <div><p className="text-sm font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Ingredient Analysis</p><h1 className="text-5xl font-black text-gray-900 tracking-tight leading-none">{selectedProduct.product.product_name}</h1></div>
-                      <div className="flex items-center gap-4 text-right"><div><p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Max Orders</p><p className={`text-5xl font-black tracking-tighter leading-none ${selectedProduct.product.can_make === 0 ? 'text-red-600' : 'text-gray-900'}`}>{selectedProduct.product.can_make}</p></div></div>
+                    <div className="p-6 md:p-8 border-b border-gray-50 bg-gradient-to-br from-white to-gray-50/50 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                      <div><p className="text-sm font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Ingredient Analysis</p><h1 className="text-3xl font-black md:text-4xl text-gray-900 tracking-tight leading-none">{selectedProduct.product.product_name}</h1></div>
+                      <div className="flex items-center gap-4 text-right"><div><p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Max Orders</p><p className={`text-3xl font-black md:text-4xl tracking-tighter leading-none ${selectedProduct.product.can_make === 0 ? 'text-red-600' : 'text-gray-900'}`}>{selectedProduct.product.can_make}</p></div></div>
                     </div>
-                    <div className="p-10 flex-1 overflow-y-auto">
+                    <div className="p-6 md:p-8 flex-1 overflow-y-auto">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                         {selectedProduct.ingredients.length === 0 ? (
                           <div className="col-span-full py-24 text-center text-gray-400">
@@ -555,23 +555,23 @@ export default function AdminInventoryPage() {
                           </div>
                         ) : (
                           selectedProduct.ingredients.map((ing) => (
-                            <div key={ing.ingredient_id} className="p-6 rounded-[2rem] border border-gray-100 bg-white hover:border-gray-200 transition-all shadow-sm hover:shadow-md">
+                            <div key={ing.ingredient_id} className="p-5 rounded-3xl border border-gray-100 bg-white hover:border-gray-200 transition-all shadow-sm hover:shadow-md">
                               <div className="flex justify-between items-start gap-4 mb-6">
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="font-black text-gray-900 text-2xl leading-tight mb-2">{ing.ingredient_name}</h4>
+                                  <h4 className="font-black text-gray-900 text-xl leading-tight mb-2">{ing.ingredient_name}</h4>
                                   <div className="flex flex-col gap-1">
                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-none">Usage</p>
-                                    <p className="text-lg font-medium text-gray-600">
+                                    <p className="text-base font-medium text-gray-600">
                                       <span className="text-gray-900 font-bold">{ing.required_quantity}{ing.unit}</span> / order
                                     </p>
                                   </div>
                                 </div>
-                                <div className="text-right shrink-0 bg-gray-50 p-4 rounded-[1.5rem] border border-gray-100/50">
-                                  <p className={`text-3xl font-black tracking-tight leading-none mb-1 ${ing.current_stock === 0 ? 'text-red-600' : 'text-gray-900'}`}>{ing.current_stock}</p>
+                                <div className="text-right shrink-0 bg-gray-50 p-3 rounded-2xl border border-gray-100/50">
+                                  <p className={`text-2xl font-black tracking-tight leading-none mb-1 ${ing.current_stock === 0 ? 'text-red-600' : 'text-gray-900'}`}>{ing.current_stock}</p>
                                   <p className="text-xs font-bold text-gray-400 uppercase tracking-tight">{ing.unit} stock</p>
                                 </div>
                               </div>
-                              <div className="pt-6 mt-2 border-t border-gray-50 space-y-3">
+                              <div className="pt-4 mt-2 border-t border-gray-50 space-y-3">
                                   <div className="flex justify-between items-center">
                                     <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Yield Capacity</span>
                                     <span className={`text-sm font-black px-3 py-1 rounded-lg ${ing.can_make === 0 ? 'bg-red-100 text-red-600' : ing.can_make < 10 ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
