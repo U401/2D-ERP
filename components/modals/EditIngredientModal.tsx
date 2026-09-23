@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { updateIngredient, deleteIngredient } from '@/app/actions/inventory'
+import { updateIngredient, deleteIngredient, getCategories } from '@/app/actions/inventory'
 import { getSuppliers } from '@/app/actions/suppliers'
 import { STANDARD_UNITS, UnitCategory, getUnitsByCategory, calculateBaseYield, getUnitById } from '@/lib/units'
 
@@ -60,11 +60,23 @@ export default function EditIngredientModal({ ingredient, onClose }: Props) {
   }, [ingredient])
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [categories, setCategories] = useState<string[]>([])
+  const [isAddingCategory, setIsAddingCategory] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
 
   useEffect(() => {
-    loadSuppliers()
+    loadData()
   }, [])
+
+  function handleItemCategoryChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    if (e.target.value === 'add_new') {
+      setIsAddingCategory(true)
+      setFormData(prev => ({ ...prev, category: '' }))
+    } else {
+      setFormData(prev => ({ ...prev, category: e.target.value }))
+    }
+  }
 
   // Update default units when category changes, but only if they actively click the radio button
   const handleCategoryChange = (newCategory: UnitCategory) => {
@@ -76,9 +88,11 @@ export default function EditIngredientModal({ ingredient, onClose }: Props) {
     }))
   }
 
-  async function loadSuppliers() {
+  async function loadData() {
     const result = await getSuppliers()
     if (result.success) setSuppliers(result.suppliers as Supplier[])
+    const catResult = await getCategories()
+    if (catResult.success) setCategories(catResult.categories || [])
   }
   
   const priceNum = parseFloat(formData.price)
@@ -136,17 +150,49 @@ export default function EditIngredientModal({ ingredient, onClose }: Props) {
             </label>
 
             <div className="grid grid-cols-2 gap-4">
-              <label className="flex flex-col">
+              <div className="flex flex-col relative">
                 <p className="text-sm font-medium text-gray-700 pb-2">Category</p>
-                <select className="form-select w-full rounded-lg bg-input-gray border-gray-300 h-12 px-4" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
-                  <option value="">Select category</option>
-                  <option value="Coffee Beans">Coffee Beans</option>
-                  <option value="Dairy">Dairy</option>
-                  <option value="Syrups">Syrups</option>
-                  <option value="Disposables">Disposables</option>
-                  <option value="Pastries">Pastries</option>
-                </select>
-              </label>
+                {isAddingCategory ? (
+                  <div className="flex gap-2">
+                    <input 
+                      autoFocus
+                      className="form-input flex-1 rounded-lg bg-input-gray border-gray-300 h-12 px-4" 
+                      placeholder="New category..." 
+                      value={newCategoryName} 
+                      onChange={e => setNewCategoryName(e.target.value)}
+                      onBlur={() => {
+                        if (newCategoryName.trim()) {
+                          setFormData(prev => ({ ...prev, category: newCategoryName.trim() }))
+                        }
+                        setIsAddingCategory(false)
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          if (newCategoryName.trim()) {
+                            setFormData(prev => ({ ...prev, category: newCategoryName.trim() }))
+                          }
+                          setIsAddingCategory(false)
+                        } else if (e.key === 'Escape') {
+                          setIsAddingCategory(false)
+                          setNewCategoryName('')
+                        }
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <select className="form-select w-full rounded-lg bg-input-gray border-gray-300 h-12 px-4" value={formData.category} onChange={handleItemCategoryChange}>
+                    <option value="">Select category</option>
+                    {Array.from(new Set(['Coffee Beans', 'Dairy', 'Syrups', 'Disposables', 'Pastries', ...categories])).sort().map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                    {formData.category && !Array.from(new Set(['Coffee Beans', 'Dairy', 'Syrups', 'Disposables', 'Pastries', ...categories])).includes(formData.category) && (
+                      <option value={formData.category}>{formData.category}</option>
+                    )}
+                    <option value="add_new" className="font-bold text-blue-600">+ Add new category</option>
+                  </select>
+                )}
+              </div>
               <label className="flex flex-col">
                 <p className="text-sm font-medium text-gray-700 pb-2">Supplier</p>
                 <select className="form-select w-full rounded-lg bg-input-gray border-gray-300 h-12 px-4" value={formData.supplier_id} onChange={e => setFormData({ ...formData, supplier_id: e.target.value })}>
