@@ -99,7 +99,7 @@ export default function TimeClockPage() {
           </p>
         </div>
 
-        <div className="bg-white rounded-[2.5rem] shadow-xl max-w-sm w-full p-8 border border-slate-100">
+        <div className="bg-white rounded-[2.5rem] shadow-xl max-w-md w-full p-8 border border-slate-100">
           {successMessage ? (
             <div className="flex flex-col items-center justify-center py-12 animate-in fade-in slide-in-from-bottom-4">
               <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mb-6">
@@ -139,7 +139,7 @@ export default function TimeClockPage() {
                   <button
                     key={num}
                     onClick={() => handleNumberClick(num.toString())}
-                    className="h-16 rounded-2xl bg-slate-50 text-2xl font-bold text-slate-900 hover:bg-slate-100 active:bg-slate-200 transition-colors"
+                    className="h-20 sm:h-24 rounded-3xl bg-slate-50 text-3xl sm:text-4xl font-bold text-slate-900 hover:bg-slate-100 active:bg-slate-200 transition-colors"
                   >
                     {num}
                   </button>
@@ -147,27 +147,27 @@ export default function TimeClockPage() {
                 <button
                   onClick={handleFingerprint}
                   disabled={loading || !storeId}
-                  className="h-16 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center hover:bg-purple-100 active:bg-purple-200 transition-colors disabled:opacity-50"
+                  className="h-20 sm:h-24 rounded-3xl bg-purple-50 text-purple-600 flex items-center justify-center hover:bg-purple-100 active:bg-purple-200 transition-colors disabled:opacity-50"
                   title="Use Fingerprint"
                 >
-                  <span className="material-symbols-outlined text-3xl">fingerprint</span>
+                  <span className="material-symbols-outlined text-4xl sm:text-5xl">fingerprint</span>
                 </button>
                 <button
                   onClick={() => handleNumberClick('0')}
-                  className="h-16 rounded-2xl bg-slate-50 text-2xl font-bold text-slate-900 hover:bg-slate-100 active:bg-slate-200 transition-colors"
+                  className="h-20 sm:h-24 rounded-3xl bg-slate-50 text-3xl sm:text-4xl font-bold text-slate-900 hover:bg-slate-100 active:bg-slate-200 transition-colors"
                 >
                   0
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="h-16 rounded-2xl bg-slate-50 flex items-center justify-center hover:bg-slate-100 active:bg-slate-200 transition-colors"
+                  className="h-20 sm:h-24 rounded-3xl bg-slate-50 flex items-center justify-center hover:bg-slate-100 active:bg-slate-200 transition-colors"
                 >
                   <span className="material-symbols-outlined text-slate-600">backspace</span>
                 </button>
                 <button
                   onClick={(e) => handleToggleClock(e as any)}
                   disabled={pin.length !== 4 || loading}
-                  className="h-16 rounded-2xl bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 active:bg-emerald-800 transition-colors disabled:opacity-50 disabled:bg-slate-200 disabled:text-slate-400"
+                  className="h-20 sm:h-24 rounded-3xl bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 active:bg-emerald-800 transition-colors disabled:opacity-50 disabled:bg-slate-200 disabled:text-slate-400"
                 >
                   {loading ? (
                     <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />

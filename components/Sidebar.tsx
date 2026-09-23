@@ -118,17 +118,17 @@ export default function Sidebar({ className = '', onNavigate }: SidebarProps) {
         <Link
             href={href}
             onClick={() => onNavigate?.()}
-            className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-colors ${
+            className={`flex items-center gap-4 px-3 py-3 rounded-lg transition-colors ${
                 active ? 'bg-gray-100 hover:bg-gray-200' : 'hover:bg-gray-50'
             }`}
         >
-            <span className="material-symbols-outlined text-gray-900" style={{ fontSize: '28px', fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}>{icon}</span>
-            <p className="text-gray-900 text-xl font-semibold leading-relaxed">{label}</p>
+            <span className="material-symbols-outlined text-gray-900" style={{ fontSize: '24px', fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}>{icon}</span>
+            <p className="text-gray-900 text-lg font-semibold leading-relaxed">{label}</p>
         </Link>
     )
 
     return (
-        <aside className={`flex-shrink-0 bg-white border-r border-gray-200 p-6 flex flex-col h-full w-[360px] max-w-full ${className}`}>
+        <aside className={`flex-shrink-0 bg-white border-r border-gray-200 p-6 flex flex-col h-full w-[280px] lg:w-[320px] xl:w-[360px] max-w-full ${className}`}>
             <div className="flex flex-col gap-5 flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
                 <div className="flex items-center gap-4 mb-4">
                     <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-14 bg-gradient-to-br from-green-400 to-green-600"></div>
@@ -180,12 +180,12 @@ export default function Sidebar({ className = '', onNavigate }: SidebarProps) {
                     <NavLink href="/time-clock/" icon="schedule" label="Time Clock" active={isActive('/time-clock')} />
                     <button
                         onClick={handleLogout}
-                        className="flex items-center gap-4 px-4 py-4 rounded-xl transition-colors hover:bg-red-50 text-red-600 w-full"
+                        className="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors hover:bg-red-50 text-red-600 w-full"
                     >
-                        <span className="material-symbols-outlined" style={{ fontSize: '28px' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
                             logout
                         </span>
-                        <p className="text-xl font-semibold leading-relaxed">
+                        <p className="text-lg font-semibold leading-relaxed">
                             Logout
                         </p>
                     </button>
