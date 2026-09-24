@@ -4,6 +4,7 @@ import './globals.css'
 import { AuthProvider } from '@/components/AuthProvider'
 import { UserMonitoring } from '@/components/UserMonitoring'
 import { AppLifecycle } from '@/components/AppLifecycle'
+import { GlobalAlert } from '@/components/GlobalAlert'
 
 const workSans = Work_Sans({
   subsets: ['latin'],
@@ -47,6 +48,7 @@ export default function RootLayout({
         <AuthProvider>
           <UserMonitoring>
             <AppLifecycle />
+            <GlobalAlert />
             {children}
           </UserMonitoring>
         </AuthProvider>
