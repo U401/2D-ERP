@@ -47,7 +47,7 @@ export default function Sidebar({ className = '', onNavigate }: SidebarProps) {
     const [isAdmin, setIsAdmin] = useState(false)
     const [username, setUsername] = useState<string>('')
     const [storeName, setStoreName] = useState<string>('')
-    const [isCollapsed, setIsCollapsed] = useState(false)
+    const [isCollapsed, setIsCollapsed] = useState(true)
     
     const supabase = createClient()
 
