@@ -334,7 +334,7 @@ export default function MenuPage() {
   
   async function handleDuplicate(product: Product) {
     const result = await getProductRecipes(product.id);
-    let recipes = [];
+    let recipes: RecipeItem[] = [];
     if (result.success && result.recipes) {
       recipes = result.recipes.map(r => ({
         ingredient_id: r.ingredient_id,
