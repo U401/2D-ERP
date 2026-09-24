@@ -83,6 +83,7 @@ export default function PosPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [searchQuery, setSearchQuery] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'order' | 'history'>('order')
   const [orderHistory, setOrderHistory] = useState<Sale[]>([])
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'gcash'>('cash')
@@ -885,9 +886,15 @@ export default function PosPage() {
                   </button>
                 </div>
 
-                <button
-                  onClick={async () => {
-                    if (!session) {
+                {checkoutError && (
+  <div className="w-full bg-red-100 text-red-700 p-3 rounded-lg text-sm font-medium text-center border border-red-200">
+    {checkoutError}
+  </div>
+)}
+<button
+  onClick={async () => {
+    setCheckoutError(null);
+    if (!session) {
                       alert('Please open a session before processing payments.')
                       return
                     }
@@ -900,7 +907,7 @@ export default function PosPage() {
                     } else {
                       const result = await handleFinalizeSale()
                       if (result && !result.success) {
-                        alert(result.error || 'Failed to finalize sale')
+                        setCheckoutError(result.error || 'Failed to finalize sale')
                       }
                     }
                   }}
