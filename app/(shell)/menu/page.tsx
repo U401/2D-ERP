@@ -576,19 +576,19 @@ export default function MenuPage() {
                   >
                     Category
                   </label>
-                  <select
-                    className="form-select w-full rounded-lg text-gray-900 bg-white border-gray-300 focus:border-gray-900 focus:ring-gray-900 h-12 text-base"
+                  <input
+                    list="categories-list"
+                    className="form-input w-full rounded-lg text-gray-900 bg-white border-gray-300 focus:border-gray-900 focus:ring-gray-900 h-12 text-base px-3"
                     id="product-category"
+                    placeholder="Type or select a category"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  >
-                    <option value="">Select category</option>
+                  />
+                  <datalist id="categories-list">
                     {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
+                      <option key={cat} value={cat} />
                     ))}
-                  </select>
+                  </datalist>
                 </div>
 
                 <div>
@@ -797,19 +797,19 @@ export default function MenuPage() {
                   >
                     Category
                   </label>
-                  <select
-                    className="form-select w-full rounded-lg text-gray-900 bg-white border-gray-300 focus:border-gray-900 focus:ring-gray-900 h-12 text-base"
+                  <input
+                    list="categories-list-new"
+                    className="form-input w-full rounded-lg text-gray-900 bg-white border-gray-300 focus:border-gray-900 focus:ring-gray-900 h-12 text-base px-3"
                     id="product-category-new"
+                    placeholder="Type or select a category"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  >
-                    <option value="">Select category</option>
+                  />
+                  <datalist id="categories-list-new">
                     {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
+                      <option key={cat} value={cat} />
                     ))}
-                  </select>
+                  </datalist>
                 </div>
 
                 <div>
@@ -1013,32 +1013,7 @@ export default function MenuPage() {
               </div>
             ))}
           </div>
-          <div className="border-t border-gray-200 my-6"></div>
-          <h4 className="text-lg font-semibold text-gray-900 mb-4">Add New Category</h4>
-          <form onSubmit={handleAddCategory} className="flex flex-col gap-5">
-            <div>
-              <label
-                className="text-gray-600 text-base font-semibold mb-3 block"
-                htmlFor="category-name"
-              >
-                Category Name
-              </label>
-              <input
-                className="form-input w-full rounded-lg text-gray-900 bg-input-gray border-gray-300 focus:border-gray-900 focus:ring-gray-900 h-12 text-base"
-                id="category-name"
-                placeholder="e.g., Cold Brew"
-                type="text"
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-              />
-            </div>
-            <button
-              type="submit"
-              className="h-12 px-5 rounded-lg bg-button-gray text-gray-900 text-base font-medium hover:bg-[#D0D0D0] transition-colors border border-gray-200"
-            >
-              Add Category
-            </button>
-          </form>
+
             </>
           )}
         </div>
