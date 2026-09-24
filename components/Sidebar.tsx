@@ -12,10 +12,11 @@ type SidebarProps = {
     onNavigate?: () => void
 }
 
-function NavCategory({ label, icon, children, defaultOpen = false }: { label: string, icon: string, children: React.ReactNode, defaultOpen?: boolean }) {
+function NavCategory({ label, icon, children, defaultOpen = false, isCollapsed = false }: { label: string, icon: string, children: React.ReactNode, defaultOpen?: boolean, isCollapsed?: boolean }) {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     return (
-        <div className="flex flex-col mb-3">
+        <div className={`flex flex-col ${isCollapsed ? 'mb-1' : 'mb-3'}`}>
+            {!isCollapsed && (
             <button 
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-gray-100 transition-colors w-full text-left group"
@@ -26,9 +27,10 @@ function NavCategory({ label, icon, children, defaultOpen = false }: { label: st
                 </div>
                 
             </button>
-            <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0'}`}>
+            )}
+            <div className={isCollapsed ? 'block' : `grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0'}`}>
                 <div className="overflow-hidden">
-                    <div className="flex flex-col gap-2 pl-3 ml-6 border-l-2 border-slate-100">
+                    <div className={`flex flex-col gap-2 ${isCollapsed ? '' : 'pl-3 ml-6 border-l-2 border-slate-100'}`}>
                         {children}
                     </div>
                 </div>
@@ -45,6 +47,7 @@ export default function Sidebar({ className = '', onNavigate }: SidebarProps) {
     const [isAdmin, setIsAdmin] = useState(false)
     const [username, setUsername] = useState<string>('')
     const [storeName, setStoreName] = useState<string>('')
+    const [isCollapsed, setIsCollapsed] = useState(false)
     
     const supabase = createClient()
 
@@ -117,58 +120,61 @@ export default function Sidebar({ className = '', onNavigate }: SidebarProps) {
     const NavLink = ({ href, icon, label, active }: { href: string, icon: string, label: string, active: boolean }) => (
         <Link
             href={href}
+            title={isCollapsed ? label : undefined}
             onClick={() => onNavigate?.()}
-            className={`flex items-center gap-4 px-3 py-3 rounded-lg transition-colors ${
+            className={`flex items-center gap-4 py-3 rounded-lg transition-colors ${isCollapsed ? 'justify-center px-0' : 'px-3'} ${
                 active ? 'bg-gray-100 hover:bg-gray-200' : 'hover:bg-gray-50'
             }`}
         >
             <span className="material-symbols-outlined text-gray-900" style={{ fontSize: '24px', fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}>{icon}</span>
-            <p className="text-gray-900 text-lg font-semibold leading-relaxed">{label}</p>
+            {!isCollapsed && <p className="text-gray-900 text-lg font-semibold leading-relaxed">{label}</p>}
         </Link>
     )
 
     return (
-        <aside className={`flex-shrink-0 bg-white border-r border-gray-200 p-6 flex flex-col h-full w-[280px] lg:w-[320px] xl:w-[360px] max-w-full ${className}`}>
+        <aside className={`flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[88px] p-4' : 'p-6 w-[280px] lg:w-[320px] xl:w-[360px]'} max-w-full ${className}`}>
             <div className="flex flex-col gap-5 flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
-                <div className="flex items-center gap-4 mb-4">
-                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-14 bg-gradient-to-br from-green-400 to-green-600"></div>
-                    <div className="flex flex-col">
-                        <h1 className="text-gray-900 text-lg font-semibold leading-relaxed">
+                <div className={`flex items-center gap-4 mb-4 ${isCollapsed ? 'justify-center' : ''}`}>
+                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-14 bg-gradient-to-br from-green-400 to-green-600 shrink-0"></div>
+                    {!isCollapsed && (
+                        <div className="flex flex-col">
+                        <h1 className="text-gray-900 text-lg font-semibold leading-relaxed truncate">
                             {isAdmin ? (username || 'Loading...') : (storeName || 'Loading...')}
                         </h1>
                         <p className="text-gray-500 text-base font-normal leading-relaxed">
                             {isAdmin ? 'Admin' : 'Staff'}
                         </p>
                     </div>
+                    )}
                 </div>
                 <nav className="flex flex-col mt-2">
                     {isAdmin && (
                         <>
-                            <NavCategory label="Store Operations" icon="storefront" defaultOpen={false}>
+                            <NavCategory isCollapsed={isCollapsed} label="Store Operations" icon="storefront" defaultOpen={false}>
                                 <NavLink href="/admin/" icon="home" label="Overview" active={isActive('/admin') && (!currentTab || currentTab === 'overview')} />
                                 <NavLink href="/inventory/" icon="inventory_2" label="Inventory" active={isActive('/inventory')} />
                                 <NavLink href="/menu/" icon="restaurant_menu" label="Menu" active={isActive('/menu')} />
                             </NavCategory>
 
-                            <NavCategory label="Financials" icon="monitoring" defaultOpen={false}>
+                            <NavCategory isCollapsed={isCollapsed} label="Financials" icon="monitoring" defaultOpen={false}>
                                 <NavLink href="/reports/costing/" icon="request_quote" label="Food Costing" active={isActive('/reports/costing')} />
                                 <NavLink href="/admin?tab=reports" icon="bar_chart" label="Reports" active={isActive('/admin') && currentTab === 'reports'} />
                             </NavCategory>
 
-                            <NavCategory label="HR & Team" icon="group" defaultOpen={false}>
+                            <NavCategory isCollapsed={isCollapsed} label="HR & Team" icon="group" defaultOpen={false}>
                                 <NavLink href="/admin?tab=users" icon="group" label="Users" active={isActive('/admin') && currentTab === 'users'} />
                                 <NavLink href="/admin?tab=hr" icon="badge" label="HR Management" active={isActive('/admin') && currentTab === 'hr'} />
                                 <NavLink href="/payroll/" icon="payments" label="Payroll" active={isActive('/payroll')} />
                             </NavCategory>
 
-                            <NavCategory label="Settings" icon="settings" defaultOpen={false}>
+                            <NavCategory isCollapsed={isCollapsed} label="Settings" icon="settings" defaultOpen={false}>
                                 <NavLink href="/admin?tab=stores" icon="store" label="Stores" active={isActive('/admin') && currentTab === 'stores'} />
                             </NavCategory>
                         </>
                     )}
 
                     {!isAdmin && (
-                        <NavCategory label="Store Staff" icon="storefront" defaultOpen={true}>
+                        <NavCategory isCollapsed={isCollapsed} label="Store Staff" icon="storefront" defaultOpen={true}>
                             <NavLink href="/pos/" icon="storefront" label="POS" active={isActive('/pos')} />
                             <NavLink href="/inventory/" icon="inventory_2" label="Inventory" active={isActive('/inventory')} />
                             <NavLink href="/reports/" icon="analytics" label="Reports" active={isActive('/reports')} />
@@ -180,14 +186,31 @@ export default function Sidebar({ className = '', onNavigate }: SidebarProps) {
                     <NavLink href="/time-clock/" icon="schedule" label="Time Clock" active={isActive('/time-clock')} />
                     <button
                         onClick={handleLogout}
-                        className="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors hover:bg-red-50 text-red-600 w-full"
+                        title={isCollapsed ? "Logout" : undefined}
+                        className={`flex items-center gap-3 py-3 rounded-lg transition-colors hover:bg-red-50 text-red-600 w-full ${isCollapsed ? 'justify-center px-0' : 'px-3'}`}
                     >
                         <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
                             logout
                         </span>
-                        <p className="text-lg font-semibold leading-relaxed">
-                            Logout
-                        </p>
+                        {!isCollapsed && (
+                            <p className="text-lg font-semibold leading-relaxed">
+                                Logout
+                            </p>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setIsCollapsed(!isCollapsed)}
+                        className={`flex items-center gap-3 py-3 mt-2 rounded-lg transition-colors hover:bg-gray-100 text-gray-500 w-full ${isCollapsed ? 'justify-center px-0' : 'px-3'}`}
+                        title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+                    >
+                        <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
+                            {isCollapsed ? 'chevron_right' : 'chevron_left'}
+                        </span>
+                        {!isCollapsed && (
+                            <p className="text-lg font-semibold leading-relaxed">
+                                Collapse
+                            </p>
+                        )}
                     </button>
                 </div>
             </div>
