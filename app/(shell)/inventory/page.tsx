@@ -117,16 +117,6 @@ export default function AdminInventoryPage() {
     return matchesStore
   })
 
-  // For staff view, auto-select the first product if none selected
-  useEffect(() => {
-    if (userRole !== 'admin' && filteredStores.length > 0 && !selectedProduct && activeTab === 'inventory') {
-      const firstStore = filteredStores[0];
-      if (firstStore.productCapacities.length > 0) {
-        handleProductClick(firstStore.store.id, firstStore.productCapacities[0]);
-      }
-    }
-  }, [userRole, filteredStores.length, !!selectedProduct, activeTab]);
-
   const checkUserAndLoadData = useCallback(async () => {
     // Only show global loading spinner on initial load, background refetch should be silent
     if (filteredStores.length === 0) setLoading(true)
