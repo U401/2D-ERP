@@ -580,62 +580,111 @@ export default function PosPage() {
             </label>
           </div>
 
-          {/* Category Tabs */}
-          <div className="border-b border-gray-200 px-4">
-            <nav className="flex gap-1 overflow-x-auto pb-0">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`shrink-0 flex items-center justify-center whitespace-nowrap px-6 py-4 text-xl font-semibold rounded-t-lg transition-colors ${
-                    selectedCategory === cat
-                      ? 'text-gray-900 border-b-2 border-gray-900'
-                      : 'text-gray-500 hover:text-gray-800'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </nav>
-          </div>
-
-          {/* Products Grid */}
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] content-start gap-4 p-4 overflow-y-auto flex-1">
-            {filteredProducts.map((product) => (
-              <button
-                key={product.id}
-                onClick={() => addToCart(product)}
-                disabled={!sessionOpen}
-                title={!sessionOpen ? 'Open a session to start selling' : undefined}
-                className="flex flex-col gap-3 pb-4 cursor-pointer rounded-2xl bg-white border border-gray-200 hover:bg-gray-50 active:scale-95 p-3 transition-all text-left disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-white shadow-sm hover:shadow-lg"
-              >
-                {product.image_url ? (
-                  <img
-                    src={product.image_url}
-                    alt={product.name}
-                    className="w-full aspect-square object-cover rounded-xl"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement
-                      target.style.display = 'none'
-                      target.nextElementSibling?.classList.remove('hidden')
-                    }}
-                  />
-                ) : null}
-                <div
-                  className={`w-full aspect-square bg-center bg-no-repeat bg-cover rounded-xl bg-gradient-to-br from-amber-800 to-amber-600 ${
-                    product.image_url ? 'hidden' : ''
-                  }`}
-                ></div>
-                <div className="flex flex-col px-1">
-                  <p className="text-gray-900 text-sm md:text-base font-bold leading-tight line-clamp-2">
-                    {product.name}
-                  </p>
-                  <p className="text-emerald-700 text-sm md:text-base font-bold mt-0.5">
-                    ₱{product.price.toFixed(2)}
-                  </p>
-                </div>
-              </button>
-            ))}
+          {/* Main Grid Area */}
+          <div className="flex-1 flex flex-col min-h-0 relative p-4 overflow-y-auto bg-gray-50/50">
+            {searchQuery ? (
+               <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] content-start gap-4">
+                 {filteredProducts.map((product) => (
+                   <button
+                     key={product.id}
+                     onClick={() => addToCart(product)}
+                     disabled={!sessionOpen}
+                     title={!sessionOpen ? 'Open a session to start selling' : undefined}
+                     className="flex flex-col gap-3 pb-4 cursor-pointer rounded-2xl bg-white border border-gray-200 hover:bg-gray-50 active:scale-95 p-3 transition-all text-left disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-white shadow-sm hover:shadow-lg"
+                   >
+                     {product.image_url ? (
+                       <img
+                         src={product.image_url}
+                         alt={product.name}
+                         className="w-full aspect-square object-cover rounded-xl"
+                         onError={(e) => {
+                           const target = e.target as HTMLImageElement;
+                             target.style.display = 'none';
+                             target.nextElementSibling?.classList.remove('hidden');
+                         }}
+                       />
+                     ) : null}
+                     <div
+                       className={`w-full aspect-square bg-center bg-no-repeat bg-cover rounded-xl bg-gradient-to-br from-amber-800 to-amber-600 ${
+                         product.image_url ? 'hidden' : ''
+                       }`}
+                     ></div>
+                     <div className="flex flex-col px-1">
+                       <p className="text-gray-900 text-sm md:text-base font-bold leading-tight line-clamp-2">
+                         {product.name}
+                       </p>
+                       <p className="text-emerald-700 text-sm md:text-base font-bold mt-0.5">
+                         ₱{product.price.toFixed(2)}
+                       </p>
+                     </div>
+                   </button>
+                 ))}
+               </div>
+            ) : !selectedCategory ? (
+               <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] content-start gap-4">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className="flex flex-col items-center justify-center gap-4 p-8 bg-white border border-gray-200 rounded-3xl shadow-sm hover:shadow-md hover:border-blue-300 hover:bg-blue-50 transition-all active:scale-95 min-h-[160px]"
+                    >
+                      <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-500">
+                        <span className="material-symbols-outlined text-3xl">category</span>
+                      </div>
+                      <span className="text-xl font-bold text-gray-900 text-center">{cat}</span>
+                    </button>
+                  ))}
+               </div>
+            ) : (
+               <div className="flex flex-col gap-6">
+                 <div className="flex items-center gap-4 pb-4 border-b border-gray-200 sticky top-0 bg-gray-50/95 backdrop-blur-sm z-10 pt-2 -mt-2">
+                    <button 
+                      onClick={() => setSelectedCategory('')}
+                      className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all shadow-sm active:scale-95"
+                    >
+                       <span className="material-symbols-outlined text-2xl">arrow_back</span>
+                    </button>
+                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">{selectedCategory}</h2>
+                 </div>
+                 <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] content-start gap-4">
+                   {filteredProducts.map((product) => (
+                     <button
+                       key={product.id}
+                       onClick={() => addToCart(product)}
+                       disabled={!sessionOpen}
+                       title={!sessionOpen ? 'Open a session to start selling' : undefined}
+                       className="flex flex-col gap-3 pb-4 cursor-pointer rounded-2xl bg-white border border-gray-200 hover:bg-gray-50 active:scale-95 p-3 transition-all text-left disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-white shadow-sm hover:shadow-lg"
+                     >
+                       {product.image_url ? (
+                         <img
+                           src={product.image_url}
+                           alt={product.name}
+                           className="w-full aspect-square object-cover rounded-xl"
+                           onError={(e) => {
+                             const target = e.target as HTMLImageElement;
+                             target.style.display = 'none';
+                             target.nextElementSibling?.classList.remove('hidden');
+                           }}
+                         />
+                       ) : null}
+                       <div
+                         className={`w-full aspect-square bg-center bg-no-repeat bg-cover rounded-xl bg-gradient-to-br from-amber-800 to-amber-600 ${
+                           product.image_url ? 'hidden' : ''
+                         }`}
+                       ></div>
+                       <div className="flex flex-col px-1">
+                         <p className="text-gray-900 text-sm md:text-base font-bold leading-tight line-clamp-2">
+                           {product.name}
+                         </p>
+                         <p className="text-emerald-700 text-sm md:text-base font-bold mt-0.5">
+                           ₱{product.price.toFixed(2)}
+                         </p>
+                       </div>
+                     </button>
+                   ))}
+                 </div>
+               </div>
+            )}
           </div>
         </div>
 
@@ -748,20 +797,18 @@ export default function PosPage() {
                           <button
                             onClick={() => updateCartQuantity(item.cart_item_id, -1)}
                             className="w-9 h-9 rounded-xl bg-gray-200 hover:bg-gray-300 active:scale-95 flex items-center justify-center text-gray-900 font-bold text-2xl transition-all"
-                            aria-label="Decrease quantity"
-                          >
-                            −
-                          </button>
+                            aria-label="Decrease quantity">
+                              <span className="material-symbols-outlined">remove</span>
+                            </button>
                           <span className="w-9 text-center text-xl font-bold text-gray-900">
                             {item.quantity}
                           </span>
                           <button
                             onClick={() => updateCartQuantity(item.cart_item_id, 1)}
                             className="w-9 h-9 rounded-xl bg-gray-800 hover:bg-gray-700 active:scale-95 flex items-center justify-center text-white font-bold text-2xl transition-all"
-                            aria-label="Increase quantity"
-                          >
-                            +
-                          </button>
+                            aria-label="Increase quantity">
+                              <span className="material-symbols-outlined">add</span>
+                            </button>
                         </div>
                         <p className="text-gray-900 w-20 text-right text-base font-bold shrink-0">
                           ₱{(itemUnitPrice * item.quantity).toFixed(2)}
