@@ -121,11 +121,6 @@ export default function PosPage() {
 
     if (data) {
       setProducts(data)
-      // Default to the first category if none selected
-      const cats = Array.from(new Set(data.map((p: any) => p.category))).filter(Boolean)
-      if (cats.length > 0 && !selectedCategory) {
-        setSelectedCategory(cats[0] as string)
-      }
     }
   }, [selectedCategory])
 
