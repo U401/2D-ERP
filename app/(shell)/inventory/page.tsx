@@ -493,11 +493,11 @@ export default function AdminInventoryPage() {
                         const lowStock = products.filter(pc => pc.can_make > 0 && pc.can_make < 10);
                         const inStock = products.filter(pc => pc.can_make >= 10);
                         
-                        const renderGrid = (items, title, colorClass) => items.length > 0 && (
+                        const renderGrid = (items: ProductOrderCapacity[], title: string, colorClass: string) => items.length > 0 && (
                           <div>
                             <h4 className={`text-sm font-bold uppercase tracking-widest mb-4 ${colorClass}`}>{title} ({items.length})</h4>
                             <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] content-start gap-4">
-                              {items.map((pc) => (
+                              {items.map((pc: ProductOrderCapacity) => (
                                 <button key={pc.product_id} onClick={() => handleProductClick(inventory.store.id, pc)} className="flex flex-col gap-3 pb-4 cursor-pointer rounded-2xl bg-white border border-gray-200 hover:bg-gray-50 active:scale-95 p-3 transition-all text-left shadow-sm hover:shadow-lg">
                                   <div className="w-full aspect-square bg-center bg-no-repeat bg-cover rounded-xl bg-gradient-to-br from-amber-800 to-amber-600 shrink-0"></div>
                                   <div className="flex flex-col px-1">
@@ -543,11 +543,11 @@ export default function AdminInventoryPage() {
                     const lowStock = products.filter(pc => pc.can_make > 0 && pc.can_make < 10);
                     const inStock = products.filter(pc => pc.can_make >= 10);
                     
-                    const renderGrid = (items, title, colorClass) => items.length > 0 && (
-                      <div>
-                        <h4 className={`text-sm font-bold uppercase tracking-widest mb-4 ${colorClass}`}>{title} ({items.length})</h4>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] content-start gap-4">
-                          {items.map((pc) => (
+                    const renderGrid = (items: ProductOrderCapacity[], title: string, colorClass: string) => items.length > 0 && (
+                          <div>
+                            <h4 className={`text-sm font-bold uppercase tracking-widest mb-4 ${colorClass}`}>{title} ({items.length})</h4>
+                            <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] content-start gap-4">
+                              {items.map((pc: ProductOrderCapacity) => (
                             <button key={pc.product_id} onClick={() => handleProductClick(filteredStores[0].store.id, pc)} className="flex flex-col gap-3 pb-4 cursor-pointer rounded-2xl bg-white border border-gray-200 hover:bg-gray-50 shadow-sm hover:shadow-lg active:scale-95 p-3 transition-all text-left">
                               <div className="w-full aspect-square bg-center bg-no-repeat bg-cover rounded-xl bg-gradient-to-br from-amber-800 to-amber-600 shrink-0"></div>
                               <div className="flex flex-col px-1">
@@ -578,8 +578,7 @@ export default function AdminInventoryPage() {
                       </>
                     );
                   })()}
-                </div>
-              </div>
+                    </div>
               </div>
           )
         )}
