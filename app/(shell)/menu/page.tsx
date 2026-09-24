@@ -331,6 +331,25 @@ export default function MenuPage() {
     }
   }
 
+  
+  async function handleDuplicate(product: Product) {
+    const result = await getProductRecipes(product.id);
+    let recipes = [];
+    if (result.success && result.recipes) {
+      recipes = result.recipes.map(r => ({
+        ingredient_id: r.ingredient_id,
+        quantity: r.quantity,
+        name: r.ingredients?.name,
+        unit: r.ingredients?.unit
+      }));
+    }
+    setEditingProduct({ id: '', name: product.name + ' (Copy)', price: product.price, category: product.category, image_url: product.image_url } as Product);
+    setFormData({ name: product.name + ' (Copy)', category: product.category || '', price: product.price.toString(), image_url: product.image_url || '' });
+    setRecipeItems(recipes);
+    setSelectedImage(null);
+    setImagePreview(null);
+  }
+
   function handleEdit(product: Product) {
     setEditingProduct(product)
     setEditingCategory(null)
@@ -525,6 +544,13 @@ export default function MenuPage() {
                         </td>
                         <td className="px-4 sm:px-8 py-3 sm:py-5 whitespace-nowrap text-right">
                           <button
+                            onClick={() => handleDuplicate(product)}
+                            className="p-2 sm:p-2.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                            title="Duplicate Product"
+                          >
+                            <span className="material-symbols-outlined text-base sm:text-xl">content_copy</span>
+                          </button>
+                          <button
                             onClick={() => handleEdit(product)}
                             className="p-2 sm:p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-md transition-colors"
                           >
@@ -546,11 +572,18 @@ export default function MenuPage() {
           </div>
         </div>
 
-        {/* Sidebar - Category Management or Product Form */}
-        <div className="lg:col-span-1 bg-white border border-gray-200 rounded-xl p-8 flex flex-col h-fit">
+        {/* Sidebar - Category Management */}
+          <div className="lg:col-span-1 bg-white border border-gray-200 rounded-xl p-8 flex flex-col h-fit">
           {editingProduct && editingProduct.id ? (
-            <>
-              <h3 className="text-xl font-bold text-gray-900 mb-6">Edit Product</h3>
+              <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4">
+                <div className="relative w-full max-w-2xl rounded-xl bg-white border border-gray-200 shadow-2xl flex flex-col max-h-[90vh]">
+                  <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                    <h3 className="text-xl font-semibold text-gray-900">Edit Product</h3>
+                    <button type="button" onClick={handleCancel} className="text-gray-400 hover:text-gray-600 transition-colors">
+                      <span className="material-symbols-outlined icon-xl">close</span>
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-6">
               <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                 <div>
                   <label
@@ -768,10 +801,19 @@ export default function MenuPage() {
                   </button>
                 </div>
               </form>
-            </>
-          ) : editingProduct && !editingProduct.id ? (
-            <>
-              <h3 className="text-xl font-bold text-gray-900 mb-6">Add New Product</h3>
+                  </div>
+                </div>
+              </div>
+            ) : editingProduct && !editingProduct.id ? (
+              <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4">
+                <div className="relative w-full max-w-2xl rounded-xl bg-white border border-gray-200 shadow-2xl flex flex-col max-h-[90vh]">
+                  <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                    <h3 className="text-xl font-semibold text-gray-900">Add New Product</h3>
+                    <button type="button" onClick={handleCancel} className="text-gray-400 hover:text-gray-600 transition-colors">
+                      <span className="material-symbols-outlined icon-xl">close</span>
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-6">
               <form onSubmit={handleSubmit} className="flex flex-col gap-5">
                 <div>
                   <label
@@ -966,10 +1008,12 @@ export default function MenuPage() {
                   </button>
                 </div>
               </form>
-            </>
-          ) : (
-            <>
-              <h3 className="text-xl font-bold text-gray-900 mb-6">Manage Categories</h3>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h3 className="text-xl font-bold text-gray-900 mb-6">Manage Categories</h3>
           <div className="flex flex-col gap-4">
             {categories.map((category) => (
               <div
