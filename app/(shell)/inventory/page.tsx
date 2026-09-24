@@ -90,6 +90,9 @@ export default function AdminInventoryPage() {
     ingredients: ProductIngredientDetail[]
   } | null>(null)
   const [viewStoreStockId, setViewStoreStockId] = useState<string | null>(null)
+    const [yieldSort, setYieldSort] = useState<'name' | 'capacity'>('name')
+    const [yieldSortDirection, setYieldSortDirection] = useState<'asc' | 'desc'>('asc')
+    const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({})
 
   const supabase = createClient()
 
@@ -418,10 +421,22 @@ export default function AdminInventoryPage() {
         {error && <div className="mb-8 rounded-2xl border border-red-200 bg-red-50 p-6 flex items-center gap-4 text-red-900 text-lg font-medium"><span className="material-symbols-outlined icon-xl">error</span>{error}</div>}
 
         {activeTab === 'inventory' && !error && (
-          <div className="mb-8 relative max-w-xl">
-            <span className="material-symbols-outlined icon-xl absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
-            <input className="block w-full pl-14 pr-6 py-4 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all text-lg" placeholder={userRole === 'admin' ? "Search stores or products..." : "Search products..."} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-          </div>
+          <div className="mb-8 flex flex-col sm:flex-row gap-4 max-w-2xl">
+              <div className="relative flex-1">
+                <span className="material-symbols-outlined icon-xl absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                <input className="block w-full pl-14 pr-6 py-4 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all text-lg" placeholder={userRole === 'admin' ? "Search stores or products..." : "Search products..."} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+              </div>
+              <select className="px-6 py-4 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-black/5 outline-none transition-all text-sm sm:text-base font-bold text-gray-700" value={`${yieldSort}-${yieldSortDirection}`} onChange={e => {
+                const [sort, dir] = e.target.value.split('-');
+                setYieldSort(sort as 'name' | 'capacity');
+                setYieldSortDirection(dir as 'asc' | 'desc');
+              }}>
+                <option value="name-asc">Sort A-Z</option>
+                <option value="name-desc">Sort Z-A</option>
+                <option value="capacity-asc">Capacity: Low to High</option>
+                <option value="capacity-desc">Capacity: High to Low</option>
+              </select>
+            </div>
         )}
         {loading ? (
           <div className="flex flex-col items-center justify-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div><p className="text-gray-500 mt-4 font-medium">Loading inventory...</p></div>
@@ -493,37 +508,57 @@ export default function AdminInventoryPage() {
                         const lowStock = products.filter(pc => pc.can_make > 0 && pc.can_make < 10);
                         const inStock = products.filter(pc => pc.can_make >= 10);
                         
-                        const renderGrid = (items: ProductOrderCapacity[], title: string, colorClass: string) => items.length > 0 && (
-                          <div>
-                            <h4 className={`text-sm font-bold uppercase tracking-widest mb-4 ${colorClass}`}>{title} ({items.length})</h4>
-                            <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] content-start gap-4">
-                              {items.map((pc: ProductOrderCapacity) => (
-                                <button key={pc.product_id} onClick={() => handleProductClick(inventory.store.id, pc)} className="flex flex-col gap-3 pb-4 cursor-pointer rounded-2xl bg-white border border-gray-200 hover:bg-gray-50 active:scale-95 p-3 transition-all text-left shadow-sm hover:shadow-lg">
-                                  <div className="w-full aspect-square bg-center bg-no-repeat bg-cover rounded-xl bg-gradient-to-br from-amber-800 to-amber-600 shrink-0"></div>
-                                  <div className="flex flex-col px-1">
-                                    <p className="text-gray-900 text-sm md:text-base font-bold leading-tight line-clamp-2">
-                                      {pc.product_name}
-                                    </p>
-                                    <p className={`text-sm font-bold mt-0.5 ${pc.can_make === 0 ? 'text-red-600' : 'text-emerald-700'}`}>
-                                      {pc.can_make} {pc.can_make === 1 ? 'order' : 'orders'}
-                                    </p>
-                                    {pc.can_make === 0 && (
-                                      <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wider font-bold truncate">
-                                        Limit: {pc.limiting_ingredient}
-                                      </p>
-                                    )}
-                                  </div>
-                                </button>
-                              ))}
+                        const renderGrid = (items: ProductOrderCapacity[], title: string, colorClass: string, groupKey: string) => {
+                          if (items.length === 0) return null;
+                          
+                          const isCollapsed = collapsedGroups[groupKey] || false;
+                          const toggleGroup = () => setCollapsedGroups(prev => ({...prev, [groupKey]: !prev[groupKey]}));
+                          
+                          const sortedItems = [...items].sort((a, b) => {
+                            if (yieldSort === 'name') {
+                              return yieldSortDirection === 'asc' ? a.product_name.localeCompare(b.product_name) : b.product_name.localeCompare(a.product_name);
+                            } else {
+                              return yieldSortDirection === 'asc' ? a.can_make - b.can_make : b.can_make - a.can_make;
+                            }
+                          });
+
+                          return (
+                            <div>
+                              <button onClick={toggleGroup} className="flex items-center gap-2 w-full text-left mb-4 group focus:outline-none">
+                                <span className={`material-symbols-outlined transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''} text-gray-400 group-hover:text-gray-900`}>expand_more</span>
+                                <h4 className={`text-sm font-bold uppercase tracking-widest ${colorClass}`}>{title} ({items.length})</h4>
+                              </button>
+                              {!isCollapsed && (
+                                <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] content-start gap-4">
+                                  {sortedItems.map((pc: ProductOrderCapacity) => (
+                                    <button key={pc.product_id} onClick={() => handleProductClick(inventory.store.id, pc)} className="flex flex-col gap-3 pb-4 cursor-pointer rounded-2xl bg-white border border-gray-200 hover:bg-gray-50 active:scale-95 p-3 transition-all text-left shadow-sm hover:shadow-lg">
+                                      <div className="w-full aspect-square bg-center bg-no-repeat bg-cover rounded-xl bg-gradient-to-br from-amber-800 to-amber-600 shrink-0"></div>
+                                      <div className="flex flex-col px-1">
+                                        <p className="text-gray-900 text-sm md:text-base font-bold leading-tight line-clamp-2">
+                                          {pc.product_name}
+                                        </p>
+                                        <p className={`text-sm font-bold mt-0.5 ${pc.can_make === 0 ? 'text-red-600' : 'text-emerald-700'}`}>
+                                          {pc.can_make} {pc.can_make === 1 ? 'order' : 'orders'}
+                                        </p>
+                                        {pc.can_make === 0 && (
+                                          <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wider font-bold truncate">
+                                            Limit: {pc.limiting_ingredient}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        );
+                          );
+                        };
 
                         return (
                           <>
-                            {renderGrid(outOfStock, 'Out of Stock', 'text-red-600')}
-                            {renderGrid(lowStock, 'Low Stock', 'text-orange-600')}
-                            {renderGrid(inStock, 'In Stock', 'text-emerald-600')}
+                            {renderGrid(outOfStock, 'Out of Stock', 'text-red-600', `${inventory.store.id}-out`)}
+                            {renderGrid(lowStock, 'Low Stock', 'text-orange-600', `${inventory.store.id}-low`)}
+                            {renderGrid(inStock, 'In Stock', 'text-emerald-600', `${inventory.store.id}-in`)}
                             {products.length === 0 && <div className="text-center text-gray-400 py-12">No products found</div>}
                           </>
                         );
@@ -543,42 +578,62 @@ export default function AdminInventoryPage() {
                     const lowStock = products.filter(pc => pc.can_make > 0 && pc.can_make < 10);
                     const inStock = products.filter(pc => pc.can_make >= 10);
                     
-                    const renderGrid = (items: ProductOrderCapacity[], title: string, colorClass: string) => items.length > 0 && (
-                          <div>
-                            <h4 className={`text-sm font-bold uppercase tracking-widest mb-4 ${colorClass}`}>{title} ({items.length})</h4>
-                            <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] content-start gap-4">
-                              {items.map((pc: ProductOrderCapacity) => (
-                            <button key={pc.product_id} onClick={() => handleProductClick(filteredStores[0].store.id, pc)} className="flex flex-col gap-3 pb-4 cursor-pointer rounded-2xl bg-white border border-gray-200 hover:bg-gray-50 shadow-sm hover:shadow-lg active:scale-95 p-3 transition-all text-left">
-                              <div className="w-full aspect-square bg-center bg-no-repeat bg-cover rounded-xl bg-gradient-to-br from-amber-800 to-amber-600 shrink-0"></div>
-                              <div className="flex flex-col px-1">
-                                  <p className="text-gray-900 text-sm md:text-base font-bold leading-tight line-clamp-2">
-                                    {pc.product_name}
-                                  </p>
-                                  <p className={`text-sm font-bold mt-0.5 ${pc.can_make === 0 ? 'text-red-600' : 'text-emerald-700'}`}>
-                                    {pc.can_make} {pc.can_make === 1 ? 'order' : 'orders'}
-                                  </p>
-                                  {pc.can_make === 0 && (
-                                    <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wider font-bold truncate">
-                                      Limit: {pc.limiting_ingredient}
-                                    </p>
-                                  )}
-                              </div>
-                            </button>
-                          ))}
+                    const renderGrid = (items: ProductOrderCapacity[], title: string, colorClass: string, groupKey: string) => {
+                      if (items.length === 0) return null;
+                      
+                      const isCollapsed = collapsedGroups[groupKey] || false;
+                      const toggleGroup = () => setCollapsedGroups(prev => ({...prev, [groupKey]: !prev[groupKey]}));
+                      
+                      const sortedItems = [...items].sort((a, b) => {
+                        if (yieldSort === 'name') {
+                          return yieldSortDirection === 'asc' ? a.product_name.localeCompare(b.product_name) : b.product_name.localeCompare(a.product_name);
+                        } else {
+                          return yieldSortDirection === 'asc' ? a.can_make - b.can_make : b.can_make - a.can_make;
+                        }
+                      });
+
+                      return (
+                        <div>
+                          <button onClick={toggleGroup} className="flex items-center gap-2 w-full text-left mb-4 group focus:outline-none">
+                            <span className={`material-symbols-outlined transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''} text-gray-400 group-hover:text-gray-900`}>expand_more</span>
+                            <h4 className={`text-sm font-bold uppercase tracking-widest ${colorClass}`}>{title} ({items.length})</h4>
+                          </button>
+                          {!isCollapsed && (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] content-start gap-4">
+                              {sortedItems.map((pc: ProductOrderCapacity) => (
+                                <button key={pc.product_id} onClick={() => handleProductClick(filteredStores[0].store.id, pc)} className="flex flex-col gap-3 pb-4 cursor-pointer rounded-2xl bg-white border border-gray-200 hover:bg-gray-50 shadow-sm hover:shadow-lg active:scale-95 p-3 transition-all text-left">
+                                  <div className="w-full aspect-square bg-center bg-no-repeat bg-cover rounded-xl bg-gradient-to-br from-amber-800 to-amber-600 shrink-0"></div>
+                                  <div className="flex flex-col px-1">
+                                      <p className="text-gray-900 text-sm md:text-base font-bold leading-tight line-clamp-2">
+                                        {pc.product_name}
+                                      </p>
+                                      <p className={`text-sm font-bold mt-0.5 ${pc.can_make === 0 ? 'text-red-600' : 'text-emerald-700'}`}>
+                                        {pc.can_make} {pc.can_make === 1 ? 'order' : 'orders'}
+                                      </p>
+                                      {pc.can_make === 0 && (
+                                        <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wider font-bold truncate">
+                                          Limit: {pc.limiting_ingredient}
+                                        </p>
+                                      )}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    );
+                      );
+                    };
 
                     return (
                       <>
-                        {renderGrid(outOfStock, 'Out of Stock', 'text-red-600')}
-                        {renderGrid(lowStock, 'Low Stock', 'text-orange-600')}
-                        {renderGrid(inStock, 'In Stock', 'text-emerald-600')}
+                        {renderGrid(outOfStock, 'Out of Stock', 'text-red-600', 'staff-out')}
+                        {renderGrid(lowStock, 'Low Stock', 'text-orange-600', 'staff-low')}
+                        {renderGrid(inStock, 'In Stock', 'text-emerald-600', 'staff-in')}
                         {products.length === 0 && <div className="text-center text-gray-400 py-12">No products found</div>}
                       </>
                     );
                   })()}
-                    </div>
+                </div>
               </div>
           )
         )}
