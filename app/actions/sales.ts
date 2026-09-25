@@ -2,15 +2,23 @@ import { createClient } from '@/lib/supabase/client'
 import { z } from 'zod'
 import type { GCashVerificationResult } from '@/lib/types/gcash'
 
+const CustomizationSchema = z.object({
+  ingredient_id: z.string().uuid().optional(),
+  delta: z.number().optional(),
+  name: z.string().optional(),
+  price_adjustment: z.number().optional(),
+}).passthrough()
+
 const SaleItemSchema = z.object({
   product_id: z.string().uuid(),
   quantity: z.number().int().positive(),
   unit_price: z.number().nonnegative().optional(),
+  customizations: z.array(CustomizationSchema).optional().default([]),
 })
 
 export async function finalizeSale(
   sessionId: string,
-  items: Array<{ product_id: string; quantity: number; unit_price?: number }>,
+  items: Array<{ product_id: string; quantity: number; unit_price?: number; customizations?: Array<{ ingredient_id?: string; delta?: number; name?: string; price_adjustment?: number }> }>,
   paymentMethod: 'cash' | 'card' | 'gcash' = 'cash',
   gcashData?: {
     referenceCode: string
