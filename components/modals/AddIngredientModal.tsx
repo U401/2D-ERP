@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { addIngredient, getCategories, renameCategory } from '@/app/actions/inventory'
 import { getSuppliers, addSupplier as createSupplier, updateSupplier, deleteSupplier } from '@/app/actions/suppliers'
 import { STANDARD_UNITS, UnitCategory, getUnitsByCategory, calculateBaseYield } from '@/lib/units'
+import { showConfirm } from '@/components/GlobalConfirm'
 
 type Supplier = {
   id: string
@@ -145,7 +146,7 @@ export default function AddIngredientModal({ onClose }: Props) {
 
   async function handleDeleteSupplier() {
     if (!formData.supplier_id) return
-    if (!confirm('Are you sure you want to delete this supplier? This action cannot be undone.')) return
+    if (!(await showConfirm('Are you sure you want to delete this supplier? This action cannot be undone.'))) return
     
     setIsCreatingSupplier(true)
     try {
@@ -171,7 +172,7 @@ export default function AddIngredientModal({ onClose }: Props) {
       return
     }
 
-    if (!confirm(`Are you sure you want to rename "${formData.category}" to "${editCategoryName.trim()}" globally?`)) return
+    if (!(await showConfirm(`Are you sure you want to rename "${formData.category}" to "${editCategoryName.trim()}" globally?`))) return
     
     const oldCat = formData.category
     const newCat = editCategoryName.trim()

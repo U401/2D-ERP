@@ -42,14 +42,23 @@ export async function addIngredient(data: z.infer<typeof IngredientSchema>) {
 
   // Create initial batch if stock > 0
   if (validated.current_stock > 0 && validated.purchase_price != null) {
-    await supabase.rpc('restock', {
+    const { error: batchError } = await supabase.rpc('restock', {
       p_ingredient_id: ingredient.id,
       p_quantity: validated.current_stock,
       p_cost: validated.purchase_price,
     })
+    if (batchError) {
+      // Ingredient row was created but initial batch failed.
+      // Return a warning so the UI can surface it — stock can be added manually via restock.
+      console.error('Initial batch creation failed for ingredient:', ingredient.id, batchError)
+      return {
+        success: true,
+        error: `Ingredient saved, but initial stock batch failed: ${batchError.message}. Please restock manually.`,
+        ingredient,
+      }
+    }
   }
 
-  
   return { success: true, error: null, ingredient }
 }
 

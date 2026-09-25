@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from 'date-fns'
 import { useRouter } from 'next/navigation'
+import { showConfirm } from '@/components/GlobalConfirm'
 
 type Profile = {
   id: string
@@ -514,7 +515,7 @@ export default function HRManagement() {
     const existing = shiftBlockMap.get(`${selectedEmployee}-${dayOfWeek}-${slot}`)
 
     if (existing) {
-      if (!confirm(`Clear ${DAY_NAMES[dayOfWeek]} ${slot.toUpperCase()} shift?`)) return
+      if (!(await showConfirm(`Clear ${DAY_NAMES[dayOfWeek]} ${slot.toUpperCase()} shift?`))) return
       setLoading(true)
       setMessage(null)
       const { data, error } = await supabase.functions.invoke('admin-actions', {
@@ -638,7 +639,7 @@ export default function HRManagement() {
   }
 
   async function handleDeleteOverride(overrideId: string) {
-    if (!confirm('Delete this override?')) return
+    if (!(await showConfirm('Delete this override?'))) return
 
     setLoading(true)
     setMessage(null)

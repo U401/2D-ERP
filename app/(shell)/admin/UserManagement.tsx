@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAutoRefresh } from '@/hooks/useAutoRefresh'
+import { showConfirm } from '@/components/GlobalConfirm'
 
 type Profile = {
     id: string
@@ -148,7 +149,7 @@ export default function UserManagement({ profiles: initialProfiles, stores: init
 
         const username = profile.username || profile.id
 
-        if (!confirm(`Delete user "${username}"?\n\nThis will remove the user from Auth and the ERP. This cannot be undone.`)) {
+        if (!(await showConfirm(`Delete user "${username}"?\n\nThis will remove the user from Auth and the ERP. This cannot be undone.`))) {
             return
         }
 

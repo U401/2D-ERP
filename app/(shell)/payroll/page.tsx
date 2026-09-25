@@ -15,6 +15,7 @@ import {
   updateStorePayrollSettings,
   deletePayslip,
 } from '@/app/actions/payroll'
+import { showConfirm } from '@/components/GlobalConfirm'
 
 type SalaryRate = {
   user_id: string
@@ -318,7 +319,7 @@ export default function PayrollPage({ initialProfiles = [] }: PayrollPageProps) 
 
   
   async function handleDeletePayslip(payslipId: string) {
-    if (!confirm('Are you sure you want to delete this payslip?')) return;
+    if (!(await showConfirm('Are you sure you want to delete this payslip?'))) return;
     setIsLoading(true);
     const result = await deletePayslip(payslipId);
     if (result.success) {

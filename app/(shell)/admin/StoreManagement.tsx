@@ -11,6 +11,7 @@ import {
   unassignUserFromStore,
   getStoreDetails,
 } from '../../actions/stores'
+import { showConfirm } from '@/components/GlobalConfirm'
 
 type Store = {
   id: string
@@ -202,7 +203,7 @@ export default function StoreManagement({ initialStores, initialUsers, isAdmin }
           <h2 className="text-2xl font-bold text-gray-900">Stores</h2>
           <button
             type="button"
-            onClick={() => {
+            onClick={async () => {
               setStoreFormData({ name: '' })
               setShowCreateModal(true)
             }}
@@ -223,7 +224,7 @@ export default function StoreManagement({ initialStores, initialUsers, isAdmin }
               <div
                 key={store.id}
                 className="border border-gray-200 rounded-xl p-6 hover:border-gray-400 hover:shadow-md transition-all cursor-pointer bg-white"
-                onClick={() => loadStoreDetails(store)}
+                onClick={async () => loadStoreDetails(store)}
               >
                 <div className="flex items-start justify-between mb-4">
                   <h3 className="text-xl font-bold text-gray-900 flex-1">{store.name}</h3>
@@ -284,7 +285,7 @@ export default function StoreManagement({ initialStores, initialUsers, isAdmin }
             </div>
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 setStoreFormData({ name: '' })
                 setShowAssignModal(true)
               }}
@@ -317,8 +318,8 @@ export default function StoreManagement({ initialStores, initialUsers, isAdmin }
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      if (confirm(`Unassign ${user.username} from ${selectedStore.name}?`)) {
+                    onClick={async () => {
+                      if (await showConfirm(`Unassign ${user.username} from ${selectedStore.name}?`)) {
                         handleUnassignUser(user)
                       }
                     }}
@@ -357,7 +358,7 @@ export default function StoreManagement({ initialStores, initialUsers, isAdmin }
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     setShowCreateModal(false)
                     setStoreFormData({ name: '' })
                     setMessage(null)
@@ -403,7 +404,7 @@ export default function StoreManagement({ initialStores, initialUsers, isAdmin }
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     setShowEditModal(false)
                     setStoreFormData({ name: '' })
                     setMessage(null)
@@ -441,7 +442,7 @@ export default function StoreManagement({ initialStores, initialUsers, isAdmin }
                     <button
                       key={user.id}
                       type="button"
-                      onClick={() => handleAssignUser(user)}
+                      onClick={async () => handleAssignUser(user)}
                       className="w-full flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all text-left"
                     >
                       <div className="w-12 h-12 rounded-full bg-input-gray flex items-center justify-center text-primary font-bold text-xl">
@@ -459,7 +460,7 @@ export default function StoreManagement({ initialStores, initialUsers, isAdmin }
 
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 setShowAssignModal(false)
                 setMessage(null)
               }}
@@ -483,7 +484,7 @@ export default function StoreManagement({ initialStores, initialUsers, isAdmin }
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   setShowDeleteConfirm(null)
                   setMessage(null)
                 }}
@@ -493,7 +494,7 @@ export default function StoreManagement({ initialStores, initialUsers, isAdmin }
               </button>
               <button
                 type="button"
-                onClick={() => handleDeleteStore(showDeleteConfirm)}
+                onClick={async () => handleDeleteStore(showDeleteConfirm)}
                 disabled={loading}
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50"
               >

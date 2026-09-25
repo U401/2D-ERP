@@ -13,6 +13,7 @@ import {
 import { getSuppliers, deleteSupplier } from '@/app/actions/suppliers'
 import EditSupplierModal from '@/components/modals/EditSupplierModal'
 import AddSupplierModal from '@/components/modals/AddSupplierModal'
+import { showConfirm } from '@/components/GlobalConfirm'
 
 type PurchaseOrder = {
   id: string
@@ -266,7 +267,7 @@ export default function PurchasingPage() {
   }
 
   async function handleCancelPO(poId: string) {
-    if (!confirm('Are you sure you want to cancel this purchase order?')) return
+    if (!(await showConfirm('Are you sure you want to cancel this purchase order?'))) return
 
     setIsLoading(true)
     setError(null)
@@ -733,7 +734,7 @@ export default function PurchasingPage() {
                           </button>
                           <button
                             onClick={async () => {
-                              if (!confirm(`Delete supplier "${s.name}"?`)) return
+                              if (!(await showConfirm(`Delete supplier "${s.name}"?`))) return
                               await deleteSupplier(s.id)
                               loadSuppliers()
                             }}

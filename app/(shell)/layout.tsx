@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { logActivity } from '@/lib/utils/activity-log'
 import { getInstanceId } from '@/lib/utils/instance-id'
 import { useState } from 'react'
+import { showConfirm } from '@/components/GlobalConfirm'
 
 export default function ShellLayout({
   children,
@@ -18,7 +19,7 @@ export default function ShellLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   async function handleLogout() {
-    if (!confirm('Are you sure you want to log out?')) return
+    if (!(await showConfirm('Are you sure you want to log out?'))) return
     await logActivity('logout')
     try {
       const { data: { user } } = await supabase.auth.getUser()

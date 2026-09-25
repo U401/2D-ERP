@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { updateIngredient, deleteIngredient, getCategories } from '@/app/actions/inventory'
 import { getSuppliers } from '@/app/actions/suppliers'
 import { STANDARD_UNITS, UnitCategory, getUnitsByCategory, calculateBaseYield, getUnitById } from '@/lib/units'
+import { showConfirm } from '@/components/GlobalConfirm'
 
 type Ingredient = {
   id: string
@@ -274,7 +275,7 @@ export default function EditIngredientModal({ ingredient, onClose }: Props) {
               type="button" 
               disabled={isProcessing}
               onClick={async () => {
-                if (confirm('Are you sure you want to delete this ingredient? This action cannot be undone.')) {
+                if (await showConfirm('Are you sure you want to delete this ingredient? This action cannot be undone.')) {
                   setIsProcessing(true)
                   const res = await deleteIngredient(ingredient.id)
                   if (res.success) {

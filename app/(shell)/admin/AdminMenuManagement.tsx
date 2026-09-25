@@ -11,6 +11,7 @@ import {
   deleteProductForStore,
 } from '@/app/actions/products'
 import { getProductRecipes, syncProductRecipes } from '@/app/actions/recipes'
+import { showConfirm } from '@/components/GlobalConfirm'
 
 type Store = { id: string; name: string }
 
@@ -241,7 +242,7 @@ export default function AdminMenuManagement() {
 
   // ── Delete ─────────────────────────────────────────────────────────────────
   async function handleDelete(product: Product) {
-    if (!confirm(`Delete "${product.name}"? This cannot be undone.`)) return
+    if (!(await showConfirm(`Delete "${product.name}"? This cannot be undone.`))) return
     const result = await deleteProductForStore(product.id, selectedStoreId)
     if (result.success) {
       await loadProducts()

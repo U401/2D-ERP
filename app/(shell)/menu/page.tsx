@@ -6,6 +6,7 @@ import { useAutoRefresh } from '@/hooks/useAutoRefresh'
 import { addProduct, updateProduct, deleteProduct, addProductForStore, updateProductForStore, deleteProductForStore } from '@/app/actions/products'
 import { getProductRecipes, syncProductRecipes } from '@/app/actions/recipes'
 import { getAllCategories, renameCategory, deleteCategory } from '@/app/actions/categories'
+import { showConfirm } from '@/components/GlobalConfirm'
 
 type Product = {
   id: string
@@ -271,7 +272,7 @@ export default function MenuPage() {
   }
 
   async function handleDelete(productId: string) {
-    if (!confirm('Are you sure you want to delete this product?')) return
+    if (!(await showConfirm('Are you sure you want to delete this product?'))) return
 
     const result = await deleteProductForStore(productId, selectedStoreId)
     if (result.success) {
@@ -321,7 +322,7 @@ export default function MenuPage() {
   }
 
   async function handleDeleteCategory(categoryName: string) {
-    if (!confirm(`Are you sure you want to delete the category "${categoryName}"?`)) return
+    if (!(await showConfirm(`Are you sure you want to delete the category "${categoryName}"?`))) return
 
     const result = await deleteCategory(categoryName, selectedStoreId)
     if (result.success) {
@@ -775,7 +776,7 @@ export default function MenuPage() {
                       type="button"
                       disabled={isProcessing}
                       onClick={async () => {
-                        if (confirm('Are you sure you want to delete this product?')) {
+                        if (await showConfirm('Are you sure you want to delete this product?')) {
                           setIsProcessing(true)
                           const res = await deleteProductForStore(editingProduct.id, selectedStoreId)
                           if (res.success) {
