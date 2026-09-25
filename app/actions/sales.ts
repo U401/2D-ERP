@@ -140,3 +140,34 @@ export async function finalizeSale(
   }
 }
 
+export async function refundSale(saleId: string, reason?: string) {
+  try {
+    const supabase = createClient()
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return { success: false, error: 'User not authenticated. Please re-login.' }
+    }
+
+    const { data, error } = await supabase.rpc('refund_sale', {
+      p_sale_id: saleId,
+      p_reason: reason || 'Customer refund',
+    })
+
+    if (error) {
+      console.error('RPC Error in refund_sale:', error)
+      let niceError = error.message || 'Failed to refund sale'
+      if (niceError.startsWith('P0001:')) {
+        niceError = niceError.replace(/^P0001:\s*/, '')
+      }
+      return { success: false, error: niceError }
+    }
+
+    return { success: true, error: null, saleId: data }
+  } catch (err: any) {
+    console.error('Unexpected error in refundSale action:', err)
+    return { success: false, error: err.message || 'An unexpected error occurred' }
+  }
+}
+
+

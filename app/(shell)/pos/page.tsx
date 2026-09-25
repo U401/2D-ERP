@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { openSession, closeSession } from '@/app/actions/session'
-import { finalizeSale } from '@/app/actions/sales'
+import { finalizeSale, refundSale } from '@/app/actions/sales'
+import { showConfirm } from '@/components/GlobalConfirm'
 import { getCustomerByPhone } from '@/app/actions/customers'
 import SessionManagementModal from '@/components/modals/SessionManagementModal'
 import GCashPaymentModal from '@/components/modals/GCashPaymentModal'
@@ -58,6 +59,9 @@ type Sale = {
   total_amount: number
   sold_at: string
   payment_method: 'cash' | 'card' | 'gcash' | null
+  status?: string | null
+  refunded_at?: string | null
+  refund_reason?: string | null
   gcash_reference_code?: string | null
   gcash_transaction_timestamp_utc?: string | null
   gcash_verification_status?: string | null
@@ -83,6 +87,7 @@ export default function PosPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [searchQuery, setSearchQuery] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isRefunding, setIsRefunding] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'order' | 'history'>('order')
   const [orderHistory, setOrderHistory] = useState<Sale[]>([])
@@ -986,9 +991,16 @@ export default function PosPage() {
                     className="flex justify-between items-center py-4 px-4 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors border border-gray-100"
                   >
                     <div className="flex flex-col">
-                      <p className="text-gray-900 text-lg font-bold">
-                        Order {formatDisplayId(sale.id, 'ORD')}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-gray-900 text-lg font-bold">
+                          Order {formatDisplayId(sale.id, 'ORD')}
+                        </p>
+                        {sale.status === 'refunded' && (
+                          <span className="px-2 py-0.5 text-xs font-bold bg-red-100 text-red-700 rounded-full">
+                            Refunded
+                          </span>
+                        )}
+                      </div>
                       <p className="text-gray-500 text-base">
                         {format(new Date(sale.sold_at), 'MMM d, h:mm a')}
                       </p>
@@ -1101,9 +1113,16 @@ export default function PosPage() {
           <div className="w-full max-w-md bg-white rounded-xl border border-gray-200 shadow-lg flex flex-col max-h-[calc(100dvh-2rem)]">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div className="flex flex-col">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Order {formatDisplayId(selectedOrder.id, 'ORD')}
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Order {formatDisplayId(selectedOrder.id, 'ORD')}
+                  </h2>
+                  {selectedOrder.status === 'refunded' && (
+                    <span className="px-2.5 py-0.5 text-xs font-bold bg-red-100 text-red-700 rounded-full">
+                      Refunded
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-gray-600">
                   {format(new Date(selectedOrder.sold_at), 'MMM d, yyyy h:mm a')}
                 </p>
@@ -1196,13 +1215,34 @@ export default function PosPage() {
                 <span className="truncate">Print Receipt</span>
               </button>
               <button
-                onClick={() => {
-                  // Refund order functionality - placeholder
-                  alert('Refund functionality coming soon')
+                disabled={isRefunding || selectedOrder.status === 'refunded'}
+                onClick={async () => {
+                  if (selectedOrder.status === 'refunded') return
+                  if (!(await showConfirm('Are you sure you want to refund this order? All ingredients used will be returned to inventory stock.'))) return
+                  
+                  try {
+                    setIsRefunding(true)
+                    const res = await refundSale(selectedOrder.id)
+                    if (!res.success) {
+                      alert(res.error || 'Failed to refund order')
+                      return
+                    }
+                    alert('Order refunded successfully and stock has been restored.')
+                    setSelectedOrder(prev => prev ? { ...prev, status: 'refunded', refunded_at: new Date().toISOString() } : null)
+                    await loadOrderHistory()
+                  } catch (err: any) {
+                    alert(err.message || 'An unexpected error occurred')
+                  } finally {
+                    setIsRefunding(false)
+                  }
                 }}
-                className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-button-gray text-gray-900 text-sm font-medium leading-normal tracking-wide hover:bg-[#D0D0D0] transition-colors border border-gray-200"
+                className={`flex min-w-[84px] max-w-[480px] items-center justify-center overflow-hidden rounded-lg h-10 px-4 text-sm font-medium leading-normal tracking-wide transition-colors border ${
+                  selectedOrder.status === 'refunded'
+                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                    : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100 cursor-pointer'
+                }`}
               >
-                <span className="truncate">Refund Order</span>
+                <span className="truncate">{isRefunding ? 'Refunding...' : selectedOrder.status === 'refunded' ? 'Refunded' : 'Refund Order'}</span>
               </button>
             </div>
           </div>

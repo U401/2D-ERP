@@ -61,7 +61,7 @@ export default function ReportsPage() {
       .lte('sold_at', now.toISOString())
       .order('sold_at', { ascending: true })
 
-    const allSales = (sales || []) as any[]
+    const allSales = ((sales || []) as any[]).filter((s: any) => s.status !== 'refunded')
 
     const todaySales = allSales.filter((s) => new Date(s.sold_at) >= startToday)
     const last7Sales = allSales.filter((s) => new Date(s.sold_at) >= start7)
