@@ -1,4 +1,4 @@
-﻿Write-Host "Building Tauri Desktop app..."
+Write-Host "Building Tauri Desktop app..."
 npm run tauri build
 
 Write-Host "Building Tauri Android app..."
@@ -23,8 +23,20 @@ if (Test-Path $exePath) {
     Write-Host "Copied EXE"
 }
 if (Test-Path $apkPath) {
-    Copy-Item -Path $apkPath -Destination "Installers\CoffeeShopERP.apk" -Force
+    $destApk = "Installers\CoffeeShopERP.apk"
+    Copy-Item -Path $apkPath -Destination $destApk -Force
     Write-Host "Copied APK"
+
+    $apksigner = Get-ChildItem -Path "$env:LOCALAPPDATA\Android\Sdk\build-tools" -Filter "apksigner.bat" -Recurse | Select-Object -First 1 -ExpandProperty FullName
+    $keystore = "$env:USERPROFILE\.android\debug.keystore"
+    if ($apksigner -and (Test-Path $keystore)) {
+        Write-Host "Signing APK with debug keystore..."
+        & $apksigner sign --ks $keystore --ks-pass pass:android --key-pass pass:android $destApk
+        & $apksigner verify $destApk
+        Write-Host "APK signed successfully!"
+    } else {
+        Write-Host "Warning: apksigner or debug.keystore not found, APK remains unsigned." -ForegroundColor Yellow
+    }
 }
 
 Write-Host "Done!"
