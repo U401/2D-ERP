@@ -1,8 +1,17 @@
-Write-Host "Building Tauri Desktop app..."
-npm run tauri build
+Write-Host "Ensuring Android SDK and NDK environment..."
+if (-not $env:ANDROID_HOME) {
+    $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+}
+if (-not $env:NDK_HOME -and (Test-Path "$env:ANDROID_HOME\ndk")) {
+    $latestNdk = Get-ChildItem "$env:ANDROID_HOME\ndk" | Sort-Object Name -Descending | Select-Object -First 1
+    if ($latestNdk) { $env:NDK_HOME = $latestNdk.FullName }
+}
 
-Write-Host "Building Tauri Android app..."
-npm run tauri android build
+Write-Host "1/2 Building Tauri Desktop app (Windows MSI & NSIS EXE)..."
+npx tauri build
+
+Write-Host "2/2 Building Tauri Android app (Universal APK)..."
+npx tauri android build
 
 Write-Host "Copying installers to Installers directory..."
 if (-not (Test-Path "Installers")) {
