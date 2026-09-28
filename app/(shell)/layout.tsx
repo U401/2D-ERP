@@ -1,12 +1,14 @@
 'use client'
 
 import Sidebar from '@/components/Sidebar'
+import AdminDrawer from '@/components/sidebar/AdminDrawer'
+import StaffDrawer from '@/components/sidebar/StaffDrawer'
 import { AdminNotificationListener } from '@/components/AdminNotificationListener'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { logActivity } from '@/lib/utils/activity-log'
 import { getInstanceId } from '@/lib/utils/instance-id'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { showConfirm } from '@/components/GlobalConfirm'
 
 export default function ShellLayout({
@@ -17,6 +19,38 @@ export default function ShellLayout({
   const router = useRouter()
   const supabase = createClient()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [username, setUsername] = useState('')
+  const [storeName, setStoreName] = useState('')
+
+  useEffect(() => {
+    async function checkUser() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username, role, store_id')
+          .eq('id', user.id)
+          .single()
+
+        if (profile) {
+          const userIsAdmin = profile.role === 'admin'
+          setIsAdmin(userIsAdmin)
+          setUsername(profile.username || '')
+
+          if (!userIsAdmin && profile.store_id) {
+            const { data: store } = await supabase
+              .from('stores')
+              .select('name')
+              .eq('id', profile.store_id)
+              .single()
+            setStoreName(store?.name || '')
+          }
+        }
+      }
+    }
+    checkUser()
+  }, [supabase])
 
   async function handleLogout() {
     if (!(await showConfirm('Are you sure you want to log out?'))) return
@@ -55,32 +89,20 @@ export default function ShellLayout({
           <Sidebar />
         </div>
 
-        {/* Mobile Slide-over Sidebar */}
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 flex md:hidden">
-            {/* Backdrop */}
-            <div 
-              className="fixed inset-0 bg-gray-900/80 transition-opacity" 
-              onClick={() => setMobileMenuOpen(false)}
-            />
-            
-            {/* Slide-over panel */}
-            <div className="relative flex w-[280px] sm:w-[320px] max-w-[85vw] flex-1 flex-col bg-white h-full shadow-2xl">
-              {/* Close button inside sidebar header or just let Sidebar render as-is */}
-              <Sidebar onNavigate={() => setMobileMenuOpen(false)} forceExpanded={true} />
-              
-              {/* Floating close button for accessibility */}
-              <div className="absolute top-4 -right-12">
-                <button
-                  type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-900 shadow-xl"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <span className="material-symbols-outlined text-[24px]">close</span>
-                </button>
-              </div>
-            </div>
-          </div>
+        {/* Dedicated Role-Separated Mobile Drawers */}
+        {isAdmin ? (
+          <AdminDrawer
+            isOpen={mobileMenuOpen}
+            onClose={() => setMobileMenuOpen(false)}
+            username={username}
+          />
+        ) : (
+          <StaffDrawer
+            isOpen={mobileMenuOpen}
+            onClose={() => setMobileMenuOpen(false)}
+            username={username}
+            storeName={storeName}
+          />
         )}
 
         <main className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
@@ -90,6 +112,7 @@ export default function ShellLayout({
               <button 
                 onClick={() => setMobileMenuOpen(true)}
                 className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
+                title="Open Navigation"
               >
                 <span className="material-symbols-outlined text-[22px]">menu</span>
               </button>
@@ -119,4 +142,3 @@ export default function ShellLayout({
     </div>
   )
 }
-
