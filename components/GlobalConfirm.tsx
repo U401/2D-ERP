@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 
@@ -20,8 +20,8 @@ export function showConfirm(message: string): Promise<boolean> {
     if (_dispatchConfirm) {
       _dispatchConfirm({ message, resolve })
     } else {
-      // Fallback if component not mounted yet
-      resolve(true)
+      // Fallback if component not mounted yet (fail-safe to cancel)
+      resolve(false)
     }
   })
 }

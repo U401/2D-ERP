@@ -1208,6 +1208,10 @@ export default function PosPage() {
               <button
                 onClick={() => {
                   // Print receipt functionality
+                  if (/Android/i.test(navigator.userAgent)) {
+                    alert('Printing is only available on the desktop app.')
+                    return
+                  }
                   window.print()
                 }}
                 className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-button-gray text-gray-900 text-sm font-medium leading-normal tracking-wide hover:bg-[#D0D0D0] transition-colors border border-gray-200"

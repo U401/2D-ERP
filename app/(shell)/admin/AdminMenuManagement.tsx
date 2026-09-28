@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAutoRefresh } from '@/hooks/useAutoRefresh'
 import {
@@ -39,7 +39,7 @@ type DrawerMode = 'add' | 'edit' | null
 const EMPTY_FORM = { name: '', category: '', price: '', image_url: '', low_stock_threshold: '5' }
 
 export default function AdminMenuManagement() {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const [stores, setStores] = useState<Store[]>([])
   const [selectedStoreId, setSelectedStoreId] = useState<string>('')
@@ -47,6 +47,7 @@ export default function AdminMenuManagement() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [loadingProducts, setLoadingProducts] = useState(false)
 
   const [drawerMode, setDrawerMode] = useState<DrawerMode>(null)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
@@ -76,13 +77,18 @@ export default function AdminMenuManagement() {
   // Load products + ingredients when store changes
   const loadProducts = useCallback(async () => {
     if (!selectedStoreId) return
-    const result = await getProductsForStore(selectedStoreId)
-    if (result.success) {
-      const prods = result.products as Product[]
-      setProducts(prods)
-      // Derive categories from products
-      const cats = Array.from(new Set(prods.map(p => p.category).filter(Boolean) as string[])).sort()
-      setCategories(cats)
+    setLoadingProducts(true)
+    try {
+      const result = await getProductsForStore(selectedStoreId)
+      if (result.success) {
+        const prods = result.products as Product[]
+        setProducts(prods)
+        // Derive categories from products
+        const cats = Array.from(new Set(prods.map(p => p.category).filter(Boolean) as string[])).sort()
+        setCategories(cats)
+      }
+    } finally {
+      setLoadingProducts(false)
     }
   }, [selectedStoreId])
 
@@ -324,7 +330,12 @@ export default function AdminMenuManagement() {
       </div>
 
       {/* Products Grid */}
-      {filtered.length === 0 ? (
+      {loadingProducts ? (
+        <div className="py-20 text-center bg-white border border-slate-200 rounded-2xl flex flex-col items-center justify-center">
+          <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin mb-3"></div>
+          <p className="text-slate-500 font-medium text-sm">Loading items...</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="py-20 text-center bg-white border border-dashed border-slate-200 rounded-2xl">
           <span className="material-symbols-outlined text-4xl text-slate-300 mb-3">restaurant_menu</span>
           <p className="text-slate-400 font-medium">

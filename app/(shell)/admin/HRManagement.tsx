@@ -102,7 +102,9 @@ export default function HRManagement() {
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [loading, setLoading] = useState(false)
   const [shiftEditModal, setShiftEditModal] = useState<{ dayOfWeek: number; slot: ShiftSlot } | null>(null)
-  const supabase = createClient()
+  const [showPhoneModal, setShowPhoneModal] = useState(false)
+  const [phoneInput, setPhoneInput] = useState('')
+  const supabase = useMemo(() => createClient(), [])
   const router = useRouter()
   useEffect(() => {
     // Reset selection when tab changes away from schedules
@@ -246,6 +248,23 @@ export default function HRManagement() {
 
     loadData()
 
+    // Visibility & focus handlers for Android background recovery
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadData()
+      }
+    }
+    const handleFocus = () => {
+      loadData()
+    }
+    window.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
+    // Polling fallback every 15s in case Android drops websocket while backgrounded
+    const pollInterval = setInterval(() => {
+      loadData()
+    }, 15000)
+
     // Subscribe to time clock events for real-time updates
     const channel = supabase
       .channel('time_clock_events_realtime')
@@ -268,6 +287,9 @@ export default function HRManagement() {
     return () => {
       console.log('HR: Cleaning up real-time channel')
       supabase.removeChannel(channel)
+      clearInterval(pollInterval)
+      window.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
     }
   }, [supabase])
 
@@ -436,10 +458,17 @@ export default function HRManagement() {
       setMessage({ type: 'error', text: message })
     } else {
       setMessage({ type: 'success', text: 'Phone number updated!' })
+      setShowPhoneModal(false)
+      setPhoneInput('')
       setTimeout(() => setMessage(null), 3000)
     }
 
     setLoading(false)
+  }
+
+  async function handleUpdatePhoneSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    await handleUpdatePhone(phoneInput)
   }
 
   function updateShiftDraft(dayOfWeek: number, slot: ShiftSlot, patch: Partial<ShiftDraft>) {
@@ -889,8 +918,7 @@ export default function HRManagement() {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const phone = prompt('Enter phone number:');
-                                if (phone) handleUpdatePhone(phone);
+                                setShowPhoneModal(true);
                               }}
                               className="w-full px-3 py-2 bg-button-gray text-slate-900 rounded-lg hover:bg-[#D0D0D0] transition-colors font-medium text-sm border border-slate-200"
                             >
@@ -1071,6 +1099,52 @@ export default function HRManagement() {
                   className="flex-1 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-medium disabled:opacity-50"
                 >
                   {loading ? 'Setting...' : 'Set PIN'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Phone Modal */}
+      {showPhoneModal && selectedEmployee && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-slate-900 mb-4">
+              Update Phone for {employee?.username}
+            </h3>
+            <form onSubmit={handleUpdatePhoneSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Phone number
+                </label>
+                <input
+                  type="tel"
+                  value={phoneInput}
+                  onChange={(e) => setPhoneInput(e.target.value)}
+                  placeholder="+63 900 000 0000"
+                  className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-slate-900 focus:outline-none text-base"
+                  autoFocus
+                  required
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPhoneModal(false)
+                    setPhoneInput('')
+                  }}
+                  className="flex-1 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-medium disabled:opacity-50"
+                >
+                  {loading ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </form>

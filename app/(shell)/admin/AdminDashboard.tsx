@@ -81,7 +81,7 @@ export default function AdminDashboard({
 
   const [salesSummary, setSalesSummary] = useState<SalesSummary | null>(null)
   const [loadingSales, setLoadingSales] = useState(true)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     async function fetchStores() {
@@ -633,10 +633,10 @@ export default function AdminDashboard({
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-end gap-3 p-4 bg-slate-50 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-3 px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-slate-50 border-t border-slate-100">
               <button
                 type="button"
-                onClick={() => window.print()}
+                onClick={() => alert('Printing is only available on the desktop app.')}
                 className="px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 transition-colors shadow-sm"
               >
                 Print Receipt

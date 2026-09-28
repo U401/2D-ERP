@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAutoRefresh } from '@/hooks/useAutoRefresh'
 import {
@@ -45,7 +45,7 @@ export default function StoreManagement({ initialStores, initialUsers, isAdmin }
   const [loading, setLoading] = useState(false)
   const [storeFormData, setStoreFormData] = useState({ name: '' })
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   // Always fetch fresh data on mount in case the component remounted from a tab switch with stale initialStores
   const fetchFreshData = useCallback(async () => {
@@ -336,7 +336,7 @@ export default function StoreManagement({ initialStores, initialUsers, isAdmin }
 
       {/* Create Store Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-xl font-bold text-gray-900 mb-4">Create New Store</h3>
             <form onSubmit={handleCreateStore} className="space-y-4">
@@ -382,7 +382,7 @@ export default function StoreManagement({ initialStores, initialUsers, isAdmin }
 
       {/* Edit Store Modal */}
       {showEditModal && selectedStore && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-xl font-bold text-gray-900 mb-4">Edit Store Name</h3>
             <form onSubmit={handleUpdateStoreName} className="space-y-4">
@@ -428,7 +428,7 @@ export default function StoreManagement({ initialStores, initialUsers, isAdmin }
 
       {/* Assign User Modal */}
       {showAssignModal && selectedStore && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-gray-900 mb-4">Assign User to {selectedStore.name}</h3>
             
@@ -474,7 +474,7 @@ export default function StoreManagement({ initialStores, initialUsers, isAdmin }
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-xl font-bold text-red-600 mb-2">Delete Store?</h3>
             <p className="text-gray-600 mb-6">

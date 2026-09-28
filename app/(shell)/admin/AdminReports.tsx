@@ -215,6 +215,11 @@ export default function AdminReports({ stores }: { stores: Store[] }) {
   }
 
   function downloadTextFile(filename: string, content: string, mime = 'text/plain') {
+    // blob-URL downloads are silently ignored by Android WebView
+    if (/Android/i.test(navigator.userAgent)) {
+      alert('CSV download is only available on the desktop app.')
+      return
+    }
     const blob = new Blob([content], { type: mime })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -323,6 +328,11 @@ export default function AdminReports({ stores }: { stores: Store[] }) {
   async function exportPdf() {
     if (!pdfRef.current) return
     if (exportingPdf) return
+    // html2canvas + jsPDF blob downloads are silently broken in Android WebView
+    if (/Android/i.test(navigator.userAgent)) {
+      alert('PDF export is only available on the desktop app.')
+      return
+    }
     setExportingPdf(true)
     try {
       await new Promise((r) => setTimeout(r, 50))
@@ -358,6 +368,8 @@ export default function AdminReports({ stores }: { stores: Store[] }) {
       const safeStoreName = (selectedStore?.name || 'store').replaceAll(/[^a-zA-Z0-9_-]+/g, '-')
       const filename = `admin-reports-${safeStoreName}-${format(new Date(), 'yyyy-MM-dd')}.pdf`
       pdf.save(filename)
+    } catch (err) {
+      alert(`PDF export failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
       setExportingPdf(false)
     }
@@ -562,7 +574,8 @@ export default function AdminReports({ stores }: { stores: Store[] }) {
         </>
       )}
 
-      {/* Off-screen PDF render (prevents scroll clipping and regenerates charts from data). */}
+      {/* Off-screen PDF render (prevents scroll clipping and regenerates charts from data). Only rendered when export panel is visible to save RAM. */}
+      {showExport && (
       <div
         ref={pdfRef}
         style={{
@@ -611,6 +624,7 @@ export default function AdminReports({ stores }: { stores: Store[] }) {
           </div>
         ) : null}
       </div>
+      )}
     </div>
   )
 }

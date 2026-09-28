@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { logActivity } from '@/lib/utils/activity-log'
 import { getInstanceId } from '@/lib/utils/instance-id'
+import { showConfirm } from '@/components/GlobalConfirm'
 
 type AdminSidebarProps = {
     className?: string
@@ -53,6 +54,7 @@ export default function AdminSidebar({
     }
 
     async function handleLogout() {
+        if (!(await showConfirm('Are you sure you want to log out?'))) return
         await logActivity('logout')
         try {
             const { data: { user } } = await supabase.auth.getUser()

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAutoRefresh } from '@/hooks/useAutoRefresh'
 import { showConfirm } from '@/components/GlobalConfirm'
@@ -28,7 +28,7 @@ export default function UserManagement({ profiles: initialProfiles, stores: init
     const [deletingId, setDeletingId] = useState<string | null>(null)
     const [currentUserId, setCurrentUserId] = useState<string | null>(null)
     const [isSaving, setIsSaving] = useState(false)
-    const supabase = createClient()
+    const supabase = useMemo(() => createClient(), [])
 
     // Always fetch fresh data on mount in case the component remounted from a tab switch with stale initial data
     const fetchFreshData = useCallback(async () => {
@@ -275,7 +275,7 @@ export default function UserManagement({ profiles: initialProfiles, stores: init
 
             {/* Edit Modal */}
             {editingId && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200">
                         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100">
                             <h3 className="text-lg font-bold text-slate-900">Edit Account</h3>

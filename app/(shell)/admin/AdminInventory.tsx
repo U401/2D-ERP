@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAutoRefresh } from '@/hooks/useAutoRefresh'
 
@@ -46,7 +46,7 @@ export default function AdminInventory() {
   const [initialLoading, setInitialLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<SelectedProduct | null>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     async function loadStores() {
@@ -372,7 +372,7 @@ export default function AdminInventory() {
             </div>
 
             {/* Close Button */}
-            <div className="p-4 border-t border-slate-100">
+            <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setSelectedProduct(null)}
