@@ -1,8 +1,9 @@
-﻿/** @type {import('next').NextConfig} */
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  turbopack: {},
-  eslint: { ignoreDuringBuilds: true },
+  turbopack: {
+    root: __dirname,
+  },
   output: 'export',
   webpack: (config, { isServer, webpack }) => {
     // Enable WebAssembly support for Tesseract.js
