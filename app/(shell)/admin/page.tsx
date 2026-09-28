@@ -247,6 +247,7 @@ export default function AdminPage() {
                         <AdminDashboard
                             initialLogs={initialData.logs}
                             initialSessions={initialData.sessions}
+                            initialStores={initialData.stores}
                         />
                     )}
 
