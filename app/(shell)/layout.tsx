@@ -65,9 +65,9 @@ export default function ShellLayout({
             />
             
             {/* Slide-over panel */}
-            <div className="relative flex w-full w-[360px] max-w-[85vw] flex-1 flex-col bg-white">
+            <div className="relative flex w-[280px] sm:w-[320px] max-w-[85vw] flex-1 flex-col bg-white h-full shadow-2xl">
               {/* Close button inside sidebar header or just let Sidebar render as-is */}
-              <Sidebar onNavigate={() => setMobileMenuOpen(false)} />
+              <Sidebar onNavigate={() => setMobileMenuOpen(false)} forceExpanded={true} />
               
               {/* Floating close button for accessibility */}
               <div className="absolute top-4 -right-12">
@@ -119,3 +119,4 @@ export default function ShellLayout({
     </div>
   )
 }
+

@@ -18,15 +18,24 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 type TabKey = 'overview' | 'inventory' | 'reports' | 'monitoring' | 'users' | 'stores' | 'hr' | 'payroll' | 'purchasing' | 'menu' | 'costing'
 
-const NAV_TABS: { key: TabKey; label: string; icon: string }[] = [
-    { key: 'overview', label: 'Overview', icon: 'home' },
-    { key: 'inventory', label: 'Inventory', icon: 'inventory_2' },
-    { key: 'menu', label: 'Menu', icon: 'restaurant_menu' },
-    { key: 'costing', label: 'Costing', icon: 'request_quote' },
-    { key: 'reports', label: 'Reports', icon: 'bar_chart' },
-    { key: 'stores', label: 'Stores', icon: 'store' },
-    { key: 'users', label: 'Users', icon: 'group' },
-    { key: 'hr', label: 'HR', icon: 'badge' },
+type AdminNavItem = {
+    key: string
+    label: string
+    icon: string
+    href?: string
+    tabKey?: TabKey
+}
+
+const ADMIN_NAV_ITEMS: AdminNavItem[] = [
+    { key: 'overview', label: 'Overview', icon: 'home', tabKey: 'overview' },
+    { key: 'reports', label: 'Reports', icon: 'bar_chart', tabKey: 'reports' },
+    { key: 'stores', label: 'Stores', icon: 'store', tabKey: 'stores' },
+    { key: 'users', label: 'Users', icon: 'group', tabKey: 'users' },
+    { key: 'hr', label: 'HR Management', icon: 'badge', tabKey: 'hr' },
+    { key: 'inventory', label: 'Inventory', icon: 'inventory_2', href: '/inventory/' },
+    { key: 'menu', label: 'Menu', icon: 'restaurant_menu', href: '/menu/' },
+    { key: 'costing', label: 'Costing', icon: 'request_quote', href: '/reports/costing/' },
+    { key: 'payroll', label: 'Payroll', icon: 'payments', href: '/payroll/' },
 ]
 
 export default function AdminPage() {
@@ -41,11 +50,13 @@ export default function AdminPage() {
     const [tab, setTab] = useState<TabKey>(queryTab || 'overview')
     const supabase = useMemo(() => createClient(), [])
 
-    const handleTabChange = (newTab: TabKey) => {
-        if (newTab === 'overview') {
+    const handleNavClick = (item: AdminNavItem) => {
+        if (item.href) {
+            router.push(item.href)
+        } else if (item.tabKey === 'overview') {
             router.push('/admin/')
-        } else {
-            router.push(`/admin?tab=${newTab}`)
+        } else if (item.tabKey) {
+            router.push(`/admin?tab=${item.tabKey}`)
         }
     }
 
@@ -206,6 +217,30 @@ export default function AdminPage() {
                         </div>
                     </div>
                 )}
+
+                {/* Horizontal Navigation Bar for Tablets & Mobile APK */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 scrollbar-none my-3">
+                    {ADMIN_NAV_ITEMS.map((item) => {
+                        const isActive = tab === item.tabKey
+                        return (
+                            <button
+                                key={item.key}
+                                type="button"
+                                onClick={() => handleNavClick(item)}
+                                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
+                                    isActive
+                                        ? 'bg-slate-900 text-white shadow-sm'
+                                        : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200'
+                                }`}
+                            >
+                                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>
+                                    {item.icon}
+                                </span>
+                                <span>{item.label}</span>
+                            </button>
+                        )
+                    })}
+                </div>
 
                 <div className={isHR ? '' : 'mt-5'}>
                     {tab === 'overview' && (
