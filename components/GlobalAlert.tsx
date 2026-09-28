@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useState } from 'react'
 
@@ -29,7 +29,7 @@ export function GlobalAlert() {
   }
 
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-end sm:justify-start p-4 sm:p-6 sm:pt-24 pointer-events-none gap-3">
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-end sm:justify-start p-4 sm:p-6 sm:pt-24 pointer-events-none gap-3 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
       {alerts.map((alert) => (
         <div key={alert.id} className="pointer-events-auto bg-gray-900 text-white rounded-2xl shadow-2xl p-4 sm:p-5 w-full max-w-sm sm:max-w-md animate-in fade-in slide-in-from-bottom-5 sm:slide-in-from-top-5 duration-300 flex items-start gap-4">
           <span className="material-symbols-outlined text-amber-400 mt-0.5">info</span>
