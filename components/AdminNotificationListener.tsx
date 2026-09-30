@@ -55,6 +55,7 @@ export function AdminNotificationListener() {
 
     let mounted = true
     let tauriPermGranted = false
+    let channelReady = false
 
     async function setup() {
       // 1. Tauri notification permissions
@@ -71,15 +72,23 @@ export function AdminNotificationListener() {
           }
 
           if (tauriPermGranted) {
-            const existing = (await channels()) || []
-            if (!existing.find((c: any) => c.id === 'erp-admin-alerts')) {
-              await createChannel({
-                id: 'erp-admin-alerts',
-                name: 'Admin Alerts',
-                description: 'Important notifications for managers and admins',
-                importance: 4,
-                visibility: 1,
-              })
+            // Channel setup — needs notification:allow-create-channel + notification:allow-list-channels
+            // Falls back gracefully if those capabilities are missing (uses default channel)
+            try {
+              const existing = (await channels()) || []
+              if (!existing.find((c: any) => c.id === 'erp-admin-alerts')) {
+                await createChannel({
+                  id: 'erp-admin-alerts',
+                  name: 'Admin Alerts',
+                  description: 'Important notifications for managers and admins',
+                  importance: 4,
+                  visibility: 1,
+                })
+              }
+              channelReady = true
+            } catch (channelErr) {
+              console.warn('[Notifications] Channel setup failed — will use default channel:', channelErr)
+              channelReady = false
             }
           }
         } catch (e) {
@@ -109,7 +118,9 @@ export function AdminNotificationListener() {
             }
 
             if (tauriPermGranted) {
-              tauriSend({ ...opts, channelId: 'erp-admin-alerts' })
+              // Only specify channelId if channel was successfully created (Android 8+)
+              // Falls back to default channel so notification always fires
+              tauriSend(channelReady ? { ...opts, channelId: 'erp-admin-alerts' } : opts)
             }
           } catch (e) {
             console.warn('[Notifications] Tauri push failed:', e)
